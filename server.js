@@ -1,6 +1,3 @@
-// ============================================================
-// MIRONET AI ASISTENT — Render.com verze s IT feedem
-// ============================================================
 const express = require('express');
 const xml2js  = require('xml2js');
 const cors    = require('cors');
@@ -163,8 +160,6 @@ function loadFromFile() {
   try { loadProductsFromXml(fs.readFileSync(CONFIG.FEED_FILE, 'utf-8')); }
   catch(e) { console.error('Chyba cteni feed.xml:', e.message); }
 }
-
-const STOP = new Set(['pro','ke','na','do','ze','pri','jak','jaky','kde','co','ktery','ktera','ktere','nebo','jen','chci','mam','mit','hledam','vybrat','koupit','poradit','nejlepsi','doporuct']);
 
 const CAT_RULES = [
   { words: ['notebook','laptop','ultrabook','macbook'], must: ['Notebooky | '] },
@@ -192,173 +187,9 @@ const CAT_RULES = [
   { words: ['sluchatka bezdrátová','true wireless','airpods'], must: ['Sluchátka | Bezdrátová'] },
 ];
 
-// ============================================================
-// MIRONET AI ASISTENT — Render.com verze s IT feedem
-// ============================================================
-const express = require('express');
-const xml2js  = require('xml2js');
-const cors    = require('cors');
-const fs      = require('fs');
-const path    = require('path');
-const https   = require('https');
-const http    = require('http');
-const crypto  = require('crypto');
-
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-const CONFIG = {
-  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
-  FEED_URL:  process.env.FEED_URL  || '',
-  FEED_FILE: path.join(__dirname, 'feed.xml'),
-  PORT: process.env.PORT || 3001,
-  MODEL: 'claude-sonnet-4-6',
-  ACCESS_PASSWORD: process.env.ACCESS_PASSWORD || 'Mironet2026+',
-  POBOCKY: [
-    { nazev: 'Praha 4 — Na Strzi',     adresa: 'Na Strzi 1702/65, 140 00 Praha 4' },
-    { nazev: 'Praha 8 — Karlin',        adresa: 'Thamova 289/13, 186 00 Praha 8'  },
-    { nazev: 'Kladno',                  adresa: 'Cs. armady 1578, 272 01 Kladno'  },
-    { nazev: 'Plzen',                   adresa: 'Borska 3, 301 00 Plzen'           },
-    { nazev: 'Brno',                    adresa: 'Prazakova 1008/69, 639 00 Brno'   },
-    { nazev: 'Jablonec nad Nisou',      adresa: 'Liberecka 102/11, 466 01 Jablonec'},
-    { nazev: 'Nupaky (vydejni sklad)',  adresa: 'Nupaky 48, 251 01 Ricany'         },
-  ]
-};
-
-const sessions = new Set();
-function generateToken() { return crypto.randomBytes(32).toString('hex'); }
-function requireAuth(req, res, next) {
-  const token = req.headers['x-session-token'];
-  if (!token || !sessions.has(token)) return res.status(401).json({ error: 'Neprihlaseni' });
-  next();
-}
-
-app.post('/login', (req, res) => {
-  const { password } = req.body;
-  if (password === CONFIG.ACCESS_PASSWORD) {
-    const token = generateToken();
-    sessions.add(token);
-    setTimeout(() => sessions.delete(token), 24 * 60 * 60 * 1000);
-    res.json({ token });
-  } else {
-    res.status(403).json({ error: 'Spatne heslo' });
-  }
-});
-
-let products = [];
-
-function loadProductsFromXml(xml) {
-  // Parsovat efektivne - bez ukladani celeho stromu
-  const result = [];
-  const itemRegex = /<SHOPITEM>([\s\S]*?)<\/SHOPITEM>/g;
-  let match;
-  const getTag = (str, tag) => {
-    const m = str.match(new RegExp('<' + tag + '>([\s\S]*?)<\/' + tag + '>'));
-    return m ? m[1].trim() : '';
-  };
-  while ((match = itemRegex.exec(xml)) !== null) {
-    const item = match[1];
-    const nazev = getTag(item, 'PRODUCTNAME');
-    if (!nazev) continue;
-    result.push({
-      nazev,
-      cena:       parseFloat(getTag(item, 'PRICE_VAT') || getTag(item, 'PRICE') || '0'),
-      url:        getTag(item, 'URL'),
-      dostupnost: getTag(item, 'AVAIL') || '0',
-      kategorie:  getTag(item, 'CATEGORYTEXT'),
-      vyrobce:    getTag(item, 'MANUFACTURER'),
-      popis:      getTag(item, 'DESCRIPTION').substring(0, 200),
-      imgurl:     getTag(item, 'IMAGE_LINK'),
-    });
-  }
-  products = result;
-  console.log('Nacteno ' + products.length + ' produktu');
-  // Uvolnit pamet
-  xml = null;
-  if (global.gc) global.gc();
-}
-
-function loadProducts() {
-  if (CONFIG.FEED_URL) {
-    console.log('Nacitam feed z URL:', CONFIG.FEED_URL);
-    const proto = CONFIG.FEED_URL.startsWith('https') ? https : http;
-    proto.get(CONFIG.FEED_URL, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => loadProductsFromXml(data));
-    }).on('error', err => { console.error('Chyba feedu:', err.message); loadFromParts(); });
-  } else { loadFromParts(); }
-}
-
-function parseItemsFromXml(xml) {
-  const result = [];
-  const getVal = (str, tag) => {
-    const s = str.indexOf('<' + tag + '>');
-    const e = str.indexOf('</' + tag + '>');
-    if (s < 0 || e < 0) return '';
-    let val = str.substring(s + tag.length + 2, e).trim();
-    // Odstranit CDATA wrapper pokud existuje
-    if (val.startsWith('<![CDATA[') && val.endsWith(']]>')) {
-      val = val.substring(9, val.length - 3);
-    }
-    return val;
-  };
-  let pos = 0;
-  while (true) {
-    const start = xml.indexOf('<SHOPITEM>', pos);
-    if (start < 0) break;
-    const end = xml.indexOf('</SHOPITEM>', start);
-    if (end < 0) break;
-    const item = xml.substring(start + 10, end);
-    const nazev = getVal(item, 'PRODUCTNAME');
-    const avail = getVal(item, 'AVAIL') || '99';
-    // Nacitat produkty dostupne do 30 dni
-    if (nazev && parseInt(avail) <= 30) {
-      result.push({
-        nazev,
-        cena:       parseFloat(getVal(item, 'PRICE_VAT') || getVal(item, 'PRICE') || '0'),
-        url:        getVal(item, 'URL'),
-        dostupnost: avail,
-        kategorie:  getVal(item, 'CATEGORYTEXT'),
-        vyrobce:    getVal(item, 'MANUFACTURER'),
-        popis:      getVal(item, 'DESCRIPTION').substring(0, 150),
-        imgurl:     getVal(item, 'IMAGE_LINK'),
-      });
-    }
-    pos = end + 11;
-  }
-  return result;
-}
-
-function loadFromParts() {
-  const parts = [];
-  for (let i = 1; i <= 7; i++) {
-    const f = path.join(__dirname, 'feed_part' + i + '.xml');
-    if (fs.existsSync(f)) parts.push(f);
-  }
-  console.log('Nalezeno ' + parts.length + ' casti feedu');
-  if (parts.length > 0) {
-    products = [];
-    for (let i = 0; i < parts.length; i++) {
-      try {
-        const xml = fs.readFileSync(parts[i], 'utf-8');
-        const items = parseItemsFromXml(xml);
-        products = products.concat(items);
-        console.log('Cast ' + (i+1) + ': +' + items.length + ' = ' + products.length);
-      } catch(e) { console.error('Chyba casti ' + (i+1) + ':', e.message); }
-    }
-    console.log('Hotovo: ' + products.length + ' produktu');
-  } else { loadFromFile(); }
-}
-
-function loadFromFile() {
-  if (!fs.existsSync(CONFIG.FEED_FILE)) { console.warn('feed.xml nenalezen'); return; }
-  try { loadProductsFromXml(fs.readFileSync(CONFIG.FEED_FILE, 'utf-8')); }
-  catch(e) { console.error('Chyba cteni feed.xml:', e.message); }
-}
-
 const STOP = new Set(['pro','ke','na','do','ze','pri','jak','jaky','kde','co','ktery','ktera','ktere','nebo','jen','chci','mam','mit','hledam','vybrat','koupit','poradit','nejlepsi','doporuct']);
+
+(['pro','ke','na','do','ze','pri','jak','jaky','kde','co','ktery','ktera','ktere','nebo','jen','chci','mam','mit','hledam','vybrat','koupit','poradit','nejlepsi','doporuct']);
 
 const CAT_RULES = [
   { words: ['notebook','laptop','ultrabook'], must: ['Notebooky | '] },
