@@ -316,6 +316,15 @@ app.post('/chat', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/debug-phones', (req, res) => {
+  const phones = products.filter(p => p.kategorie && p.kategorie.includes('Telefony | Mobiln'));
+  res.json({
+    celkem_produktu: products.length,
+    telefony_celkem: phones.length,
+    prvnich_10: phones.slice(0, 10).map(p => ({ nazev: p.nazev, avail: p.dostupnost, cena: p.cena, kat: p.kategorie }))
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', model: CONFIG.MODEL, produktu: products.length, apiKlic: !!CONFIG.ANTHROPIC_API_KEY, pobocky: CONFIG.POBOCKY.map(p => p.nazev) });
 });
