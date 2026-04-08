@@ -317,11 +317,17 @@ app.post('/chat', requireAuth, async (req, res) => {
 });
 
 app.get('/debug-phones', (req, res) => {
+  const q = req.query.q || 'Samsung';
   const phones = products.filter(p => p.kategorie && p.kategorie.includes('Telefony | Mobiln'));
+  const samsung = products.filter(p => p.nazev && p.nazev.toLowerCase().includes(q.toLowerCase()));
+  const allKats = [...new Set(phones.map(p => p.kategorie.split(' | ').slice(0,3).join(' | ')))].sort();
   res.json({
     celkem_produktu: products.length,
     telefony_celkem: phones.length,
-    prvnich_10: phones.slice(0, 10).map(p => ({ nazev: p.nazev, avail: p.dostupnost, cena: p.cena, kat: p.kategorie }))
+    hledano_q: q,
+    nalezeno_q: samsung.length,
+    prvni_q: samsung.slice(0, 3).map(p => ({ nazev: p.nazev, avail: p.dostupnost, cena: p.cena, kat: p.kategorie })),
+    kategorie_telefony: allKats
   });
 });
 
