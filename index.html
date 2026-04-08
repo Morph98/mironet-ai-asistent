@@ -329,6 +329,7 @@ function addMsg(role, html) {
 
 function renderProducts(products) {
   if (!products || products.length === 0) return '';
+  products = products.slice(0, 5); // Zobrazit max 5 karet
   const cards = products.map(function(p) {
     var skladem = p.dostupnost === 'Skladem';
     var onclick = p.url ? 'onclick="window.open(\'' + p.url + '\',\'_blank\')"' : '';
