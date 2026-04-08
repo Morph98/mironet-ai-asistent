@@ -1022,7 +1022,7 @@ app.get('/debug-feed', (req, res) => {
   res.json({ celkem_produktu: products.length, top_kategorie: topKats, prvnich_5: sample, hledano: q||null, nalezeno: searchResult });
 });
 
-app.get('/debug-search', requireAuth, (req, res) => {
+app.get('/debug-search', (req, res) => {
   const q = req.query.q || 'notebook';
   const results = search(q, 5);
   const qn = norm(q);
