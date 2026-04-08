@@ -507,6 +507,58 @@ function editDist(a, b) {
   return dp[m][n];
 }
 
+// Mapování tokenů na top-level kategorie pro bonus skórování
+// MUSÍ být před scoreProduct()
+const TOKEN_CATEGORY_MAP = {
+  'notebook':     'Notebooky',
+  'laptop':       'Notebooky',
+  'macbook':      'Notebooky',
+  'ultrabook':    'Notebooky',
+  'telefon':      'Telefony',
+  'mobil':        'Telefony',
+  'smartphone':   'Telefony',
+  'iphone':       'Telefony',
+  'samsung':      'Telefony',
+  'xiaomi':       'Telefony',
+  'monitor':      'Monitory',
+  'tablet':       'Tablety',
+  'ipad':         'Tablety',
+  'tiskarna':     'Tiskárny a multifunkce',
+  'televize':     'Televize',
+  'televizor':    'Televize',
+  'projektor':    'Projektory',
+  'fotoaparat':   'Fotoaparáty a optika',
+  'kamera':       'Kamery',
+  'router':       'Sítě',
+  'switch':       'Sítě',
+  'server':       'Servery, Racky a platformy',
+  'skener':       'Skenery',
+  'software':     'Software',
+  'konzole':      'Hry a herní zařízení',
+  'playstation':  'Hry a herní zařízení',
+  'xbox':         'Hry a herní zařízení',
+  'nintendo':     'Hry a herní zařízení',
+  'hodinky':      'Chytré hodinky a SMART',
+  'smartwatch':   'Chytré hodinky a SMART',
+  'gps':          'GPS navigace',
+  'navigace':     'GPS navigace',
+  'ctecka':       'Čtečky e-knih',
+  'kindle':       'Čtečky e-knih',
+  'vysavac':      'Spotřebiče do domácnosti',
+  'kavovar':      'Spotřebiče do domácnosti',
+  'kafeovar':     'Spotřebiče do domácnosti',
+  'klimatizace':  'Spotřebiče do domácnosti',
+  'vrtacka':      'Dům a dílna',
+  'sekacka':      'Zahrada',
+  'gril':         'Zahrada',
+  'reproduktor':  'Audio-Video',
+  'soundbar':     'Audio-Video',
+  'gramofon':     'Audio-Video',
+  'sluchatka':    'Audio-Video',
+  'mikrofon':     'Audio-Video',
+  'pokladna':     'Pokladní a evidenční systémy',
+};
+
 // Skórování jednoho produktu proti rozšířeným tokenům
 function scoreProduct(p, expandedTokens, originalTokens, phraseNorm) {
   const nl = norm(p.nazev);
@@ -842,56 +894,6 @@ const CAT_RULES = [
     must: ['Pokladní a evidenční systémy | '] },
 ];
 
-// Mapování tokenů na top-level kategorie pro bonus skórování
-const TOKEN_CATEGORY_MAP = {
-  'notebook':     'Notebooky',
-  'laptop':       'Notebooky',
-  'macbook':      'Notebooky',
-  'ultrabook':    'Notebooky',
-  'telefon':      'Telefony',
-  'mobil':        'Telefony',
-  'smartphone':   'Telefony',
-  'iphone':       'Telefony',
-  'samsung':      'Telefony',
-  'xiaomi':       'Telefony',
-  'monitor':      'Monitory',
-  'tablet':       'Tablety',
-  'ipad':         'Tablety',
-  'tiskarna':     'Tiskárny a multifunkce',
-  'televize':     'Televize',
-  'televizor':    'Televize',
-  'projektor':    'Projektory',
-  'fotoaparat':   'Fotoaparáty a optika',
-  'kamera':       'Kamery',
-  'router':       'Sítě',
-  'switch':       'Sítě',
-  'server':       'Servery, Racky a platformy',
-  'skener':       'Skenery',
-  'software':     'Software',
-  'konzole':      'Hry a herní zařízení',
-  'playstation':  'Hry a herní zařízení',
-  'xbox':         'Hry a herní zařízení',
-  'nintendo':     'Hry a herní zařízení',
-  'hodinky':      'Chytré hodinky a SMART',
-  'smartwatch':   'Chytré hodinky a SMART',
-  'gps':          'GPS navigace',
-  'navigace':     'GPS navigace',
-  'ctecka':       'Čtečky e-knih',
-  'kindle':       'Čtečky e-knih',
-  'vysavac':      'Spotřebiče do domácnosti',
-  'kavovar':      'Spotřebiče do domácnosti',
-  'kafeovar':     'Spotřebiče do domácnosti',
-  'klimatizace':  'Spotřebiče do domácnosti',
-  'vrtacka':      'Dům a dílna',
-  'sekacka':      'Zahrada',
-  'gril':         'Zahrada',
-  'reproduktor':  'Audio-Video',
-  'soundbar':     'Audio-Video',
-  'gramofon':     'Audio-Video',
-  'sluchatka':    'Audio-Video',
-  'mikrofon':     'Audio-Video',
-  'pokladna':     'Pokladní a evidenční systémy',
-};
 
 
 function search(query, max) {
@@ -987,6 +989,8 @@ function buildPrompt(found) {
 
 Komunikujes cesky, pratelsky a odborne. Pises bez markdown formatovani (zadne **tucne**, zadne # nadpisy). Pis gramaticky spravne cesky.
 
+SORTIMENT Mironet.cz: elektronika, IT technika, notebooky, telefony, tablety, komponenty, site, monitory, tiskárny, audio-video, televize, fotoaparaty, kamery, chytre hodinky, GPS, herni zarizeni, spotrebice do domacnosti, zahradní technika, sport a kemping, chovatelske potreby, hracky, kancelarske potreby, auto-moto prislusenstvi, domaci potreby a dalsi.
+
 POBOCKY:
 ${pobocky}
 
@@ -995,7 +999,8 @@ OBJEDNAVKY: mironet.cz/muj-ucet
 
 PRAVIDLA:
 - Doporucuj POUZE produkty ze seznamu nize - pokud produkt v seznamu neni, NIKDY ho nevymyslej
-- Pokud pozadovany produkt v katalogu neni, uprimne to rici a nasmerovat na mironet.cz
+- Pokud pozadovany produkt v katalogu neni, nasmeruj na mironet.cz kde je kompletni sortiment
+- NIKDY nerikej ze Mironet neco neprodava - mozna to jen neni v tomto vyhledavani, vzdy nasmeruj na mironet.cz
 - NIKDY nepis URL adresy do textu odpovedi
 - Produkty jsou zakaznikovi zobrazeny v kartach pod textem - nemusis je popisovat detailne
 - Na KONEC odpovedi vzdy pridej tag s indexy produktu ktere doporucujes (na novy radek): INDEXY:[0,2,4]
