@@ -1092,13 +1092,35 @@ app.get('/debug-search', (req, res) => {
   const filtTokens = tokenize(qn).filter(t => !/^\d+$/.test(t));
   const expanded = expandTokens(filtTokens);
   const phrase = filtTokens.slice(0,3).join(' ');
+
+  // Simuluj CAT_RULES matching
+  let catFilter = [];
+  for (const rule of CAT_RULES) {
+    if (rule.words.some(w => norm(w).split(' ').every(wt => qn.includes(wt)))) {
+      catFilter = rule.must; break;
+    }
+  }
+  const poolAfterCat = catFilter.length > 0
+    ? products.filter(p => catFilter.some(f => norm(p.kategorie + ' ' + p.nazev).includes(norm(f))))
+    : products;
+  const bmPlain = q.match(/\bdo\s+(\d{4,6})\b/i);
+  const budget = bmPlain ? parseFloat(bmPlain[1]) : null;
+  const poolAfterBudget = budget ? poolAfterCat.filter(p => p.cena > 0 && p.cena <= budget * 1.1) : poolAfterCat;
+
   const notebooky = products.filter(p => (p.kategorie||'').startsWith('Notebooky')).slice(0,3);
   const scoredNb = notebooky.map(p => ({
     nazev: p.nazev.substring(0,50),
     kategorie: p.kategorie,
+    cena: p.cena,
     score: scoreProduct(p, expanded, filtTokens, phrase)
   }));
-  res.json({ query: q, tokens: filtTokens, search_results: results.slice(0,3), notebooky_score: scoredNb });
+  res.json({
+    query: q, tokens: filtTokens,
+    catFilter, pool_po_cat: poolAfterCat.length, pool_po_budget: poolAfterBudget.length,
+    budget,
+    search_results: results.slice(0,3),
+    notebooky_score: scoredNb
+  });
 });
 
 app.get('/debug-kat', (req, res) => {
