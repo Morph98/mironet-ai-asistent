@@ -998,6 +998,16 @@ app.post('/chat', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/debug-stats', (req, res) => {
+  const stats = {};
+  for (const p of products) {
+    const top = (p.kategorie || 'nezname').split(' | ')[0].trim();
+    stats[top] = (stats[top] || 0) + 1;
+  }
+  const sorted = Object.entries(stats).sort((a,b) => b[1]-a[1]);
+  res.json({ celkem: products.length, kategorie_pocty: Object.fromEntries(sorted) });
+});
+
 app.get('/debug-feed', (req, res) => {
   const topKats = [...new Set(products.map(p => (p.kategorie||'').split(' | ')[0].trim()))].sort();
   const sample = products.slice(0, 5).map(p => ({ nazev: p.nazev, kategorie: p.kategorie, cena: p.cena }));
