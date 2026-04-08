@@ -935,7 +935,11 @@ function search(query, max) {
     }
   }
   if (catFilter.length > 0) {
-    const cf = products.filter(p => catFilter.some(f => norm(p.kategorie).includes(norm(f))));
+    const cf = products.filter(p => catFilter.some(f => {
+      const nk = norm(p.kategorie);
+      const nf = norm(f).trim();
+      return nk.startsWith(nf) || nk === nf.trim();
+    }));
     if (cf.length >= 5) pool = cf;
   }
 
@@ -1101,7 +1105,7 @@ app.get('/debug-search', (req, res) => {
     }
   }
   const poolAfterCat = catFilter.length > 0
-    ? products.filter(p => catFilter.some(f => norm(p.kategorie).includes(norm(f))))
+    ? products.filter(p => catFilter.some(f => { const nk = norm(p.kategorie); const nf = norm(f).trim(); return nk.startsWith(nf) || nk === nf.trim(); }))
     : products;
   const bmPlain = q.match(/\bdo\s+(\d{4,6})\b/i);
   const budget = bmPlain ? parseFloat(bmPlain[1]) : null;
