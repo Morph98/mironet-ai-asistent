@@ -151,7 +151,7 @@ const CAT_RULES = [
   { words: ['mys ','mouse','herni mys'], must: ['Mysi | '] },
   { words: ['sluchatka','headset'], must: ['Sluch'] },
   { words: ['tablet','ipad'], must: ['Tablety | '] },
-  { words: ['telefon','smartphone','iphone','samsung','xiaomi','mobil'], must: ['Telefony | '] },
+  { words: ['telefon','smartphone','iphone','samsung','xiaomi','mobil'], must: ['Telefony | Mobiln'] },
   { words: ['playstation','xbox','nintendo','ps5','konzole'], must: ['Herni konzole','Konzole'] },
   { words: ['projektor'], must: ['Projektory | '] },
   { words: ['televize','televizor','smart tv'], must: ['Televize | '] },
