@@ -511,19 +511,27 @@ function editDist(a, b) {
 function scoreProduct(p, expandedTokens, originalTokens, phraseNorm) {
   const nl = norm(p.nazev);
   const kl = norm(p.kategorie + ' ' + p.vyrobce);
+  const topKat = (p.kategorie || '').split(' | ')[0].trim();
   let score = 0;
 
   // 1. Přesná fráze v názvu = velký bonus
   if (phraseNorm && nl.includes(phraseNorm)) score += 20;
 
-  // 2. Skórování podle rozšířených tokenů
+  // 2. Klíčový bonus: token přímo mapuje na top-level kategorii produktu
+  //    Zajistí že "notebook" najde Notebooky, ne jen příslušenství pro notebooky
+  for (const t of originalTokens) {
+    const mappedKat = TOKEN_CATEGORY_MAP[t];
+    if (mappedKat && topKat === mappedKat) score += 15;
+  }
+
+  // 3. Skórování podle rozšířených tokenů
   for (const [token, weight] of expandedTokens) {
     const nt = norm(token);
     if (nl.includes(nt)) score += weight * 3;       // match v názvu
     else if (kl.includes(nt)) score += weight * 1;  // match v kategorii/výrobci
   }
 
-  // 3. Fuzzy matching pro originální tokeny (pouze slova 4+ znaků, max edit dist 1)
+  // 4. Fuzzy matching pro originální tokeny (pouze slova 4+ znaků, max edit dist 1)
   for (const t of originalTokens) {
     if (t.length < 4) continue;
     const words = nl.split(' ');
@@ -533,11 +541,10 @@ function scoreProduct(p, expandedTokens, originalTokens, phraseNorm) {
     }
   }
 
-  // 4. Bonus za dostupnost skladem
+  // 5. Bonus za dostupnost skladem
   if (p.dostupnost === '0') score += 1;
 
-  // 5. Malus za produkty kde žádný originální token není v názvu ani kategorii
-  //    (zabrání zobrazení totálně nerelevantních produktů)
+  // 6. Malus za produkty kde žádný originální token není v názvu ani kategorii
   const anyOriginalMatch = originalTokens.some(t => nl.includes(t) || kl.includes(t));
   if (!anyOriginalMatch) score = Math.min(score, 2);
 
@@ -835,7 +842,58 @@ const CAT_RULES = [
     must: ['Pokladní a evidenční systémy | '] },
 ];
 
-// Vyhledávání - pseudo-vektorový engine
+// Mapování tokenů na top-level kategorie pro bonus skórování
+const TOKEN_CATEGORY_MAP = {
+  'notebook':     'Notebooky',
+  'laptop':       'Notebooky',
+  'macbook':      'Notebooky',
+  'ultrabook':    'Notebooky',
+  'telefon':      'Telefony',
+  'mobil':        'Telefony',
+  'smartphone':   'Telefony',
+  'iphone':       'Telefony',
+  'samsung':      'Telefony',
+  'xiaomi':       'Telefony',
+  'monitor':      'Monitory',
+  'tablet':       'Tablety',
+  'ipad':         'Tablety',
+  'tiskarna':     'Tiskárny a multifunkce',
+  'televize':     'Televize',
+  'televizor':    'Televize',
+  'projektor':    'Projektory',
+  'fotoaparat':   'Fotoaparáty a optika',
+  'kamera':       'Kamery',
+  'router':       'Sítě',
+  'switch':       'Sítě',
+  'server':       'Servery, Racky a platformy',
+  'skener':       'Skenery',
+  'software':     'Software',
+  'konzole':      'Hry a herní zařízení',
+  'playstation':  'Hry a herní zařízení',
+  'xbox':         'Hry a herní zařízení',
+  'nintendo':     'Hry a herní zařízení',
+  'hodinky':      'Chytré hodinky a SMART',
+  'smartwatch':   'Chytré hodinky a SMART',
+  'gps':          'GPS navigace',
+  'navigace':     'GPS navigace',
+  'ctecka':       'Čtečky e-knih',
+  'kindle':       'Čtečky e-knih',
+  'vysavac':      'Spotřebiče do domácnosti',
+  'kavovar':      'Spotřebiče do domácnosti',
+  'kafeovar':     'Spotřebiče do domácnosti',
+  'klimatizace':  'Spotřebiče do domácnosti',
+  'vrtacka':      'Dům a dílna',
+  'sekacka':      'Zahrada',
+  'gril':         'Zahrada',
+  'reproduktor':  'Audio-Video',
+  'soundbar':     'Audio-Video',
+  'gramofon':     'Audio-Video',
+  'sluchatka':    'Audio-Video',
+  'mikrofon':     'Audio-Video',
+  'pokladna':     'Pokladní a evidenční systémy',
+};
+
+
 function search(query, max) {
   max = max || 30;
   if (products.length === 0) return [];
