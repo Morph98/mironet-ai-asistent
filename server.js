@@ -181,10 +181,225 @@ function paramsToStr(params) {
   return parts.length > 0 ? ' [' + parts.join(', ') + ']' : '';
 }
 
-// Stopslova
-const STOP = new Set(['pro','ke','na','do','ze','jak','kde','co','nebo','jen','chci','mam','hledam','vybrat','koupit','nejlepsi','dobry']);
+// ============================================================
+// PSEUDO-VEKTOROVÝ SEARCH ENGINE
+// ============================================================
 
-// Kategoriova pravidla
+// Stopslova
+const STOP = new Set(['pro','ke','na','do','ze','jak','kde','co','nebo','jen','chci','mam','hledam','vybrat','koupit','nejlepsi','dobry','nejaky','nejakou','jaky','jakou','chtel','chtela','bych','bys','asi','taky','take','velmi','hodne','trochu','pls','prosim','prosimte','dekuji']);
+
+// Normalizace textu - odstranění diakritiky + lowercase + sjednocení oddělovačů
+function norm(s) {
+  return s.toLowerCase()
+    .replace(/[áàâä]/g,'a').replace(/[čç]/g,'c').replace(/[ďđ]/g,'d')
+    .replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[ň]/g,'n')
+    .replace(/[óòôö]/g,'o').replace(/[řŕ]/g,'r').replace(/[šś]/g,'s')
+    .replace(/[ťţ]/g,'t').replace(/[úùûü]/g,'u').replace(/[ýÿ]/g,'y')
+    .replace(/[žź]/g,'z')
+    .replace(/[-_\/\\]/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+
+// Tokenizace - vrátí pole tokenů bez stopwords
+function tokenize(s) {
+  return norm(s).replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w.length > 1 && !STOP.has(w));
+}
+
+// Synonymní slovník - rozšíření dotazu o příbuzné pojmy
+// Klíč = co uživatel napíše, hodnoty = co hledat v katalogu
+const SYNONYMS = {
+  // Telefony
+  'telefon':      ['telefon','mobil','smartphone','iphone','samsung','xiaomi'],
+  'mobil':        ['mobil','telefon','smartphone','iphone','samsung','xiaomi'],
+  'smartphone':   ['smartphone','telefon','mobil','iphone','android'],
+  'iphone':       ['iphone','apple'],
+  'samsung':      ['samsung'],
+  'xiaomi':       ['xiaomi','redmi','poco'],
+  'android':      ['android','samsung','xiaomi','motorola','honor','realme'],
+  // Notebooky
+  'notebook':     ['notebook','laptop','ultrabook','macbook'],
+  'laptop':       ['laptop','notebook','ultrabook'],
+  'macbook':      ['macbook','apple'],
+  'ultrabook':    ['ultrabook','notebook','laptop'],
+  // Monitory
+  'monitor':      ['monitor','display'],
+  'obrazovka':    ['monitor','display','obrazovka'],
+  // Komponenty
+  'grafika':      ['graficka','gpu','geforce','radeon','rtx','gtx'],
+  'graficka':     ['graficka','gpu','geforce','radeon','rtx','gtx'],
+  'gpu':          ['gpu','graficka','geforce','radeon','rtx','gtx'],
+  'rtx':          ['rtx','geforce','nvidia'],
+  'gtx':          ['gtx','geforce','nvidia'],
+  'procesor':     ['procesor','cpu','ryzen','core','intel'],
+  'cpu':          ['cpu','procesor','ryzen','intel','core'],
+  'ryzen':        ['ryzen','amd'],
+  'ram':          ['ram','ddr','dimm','sodimm','pameti'],
+  'pameti':       ['ram','ddr','pameti'],
+  'ssd':          ['ssd','nvme','m.2'],
+  'nvme':         ['nvme','ssd','m.2'],
+  'hdd':          ['hdd','pevny disk','harddisk'],
+  // Periferie
+  'mys':          ['mys','mouse'],
+  'klavesnice':   ['klavesnice','keyboard'],
+  'sluchatka':    ['sluchatka','headset','headphones','airpods'],
+  'headset':      ['headset','sluchatka'],
+  'airpods':      ['airpods','sluchatka','apple'],
+  // Kabely
+  'kabel':        ['kabel','cable'],
+  'hdmi':         ['hdmi'],
+  'usb':          ['usb'],
+  'usbc':         ['usb-c','usb c','type-c','typec'],
+  'nabijeni':     ['nabij','charger','nabijec'],
+  'nabijec':      ['nabijec','charger','nabij','adaptér'],
+  'adapter':      ['adapter','adaptér','redukce'],
+  'redukce':      ['redukce','adapter','adaptér'],
+  // Tablety
+  'tablet':       ['tablet','ipad','android'],
+  'ipad':         ['ipad','apple','tablet'],
+  // Tisk
+  'tiskarna':     ['tiskarna','printer','multifunkc'],
+  'toner':        ['toner','cartridge','napl'],
+  'cartridge':    ['cartridge','toner','napl'],
+  // Sit
+  'router':       ['router','wifi','wi-fi'],
+  'wifi':         ['wifi','wi-fi','router','wireless'],
+  'switch':       ['switch','prepinac'],
+  // Skladovani
+  'flash':        ['flash','pendrive','usb disk'],
+  'pendrive':     ['pendrive','flash','usb disk'],
+  'nas':          ['nas','uloziste','storage'],
+  // Audio/Video
+  'reproduktor':  ['reproduktor','speaker','soundbar'],
+  'soundbar':     ['soundbar','reproduktor','speaker'],
+  'televizor':    ['televizor','televize','tv','oled','qled'],
+  'televize':     ['televize','televizor','tv'],
+  'projektor':    ['projektor','projector','beamer'],
+  // Foto
+  'fotoaparat':   ['fotoaparat','kamera','dslr','bezzrcadlovy'],
+  'kamera':       ['kamera','fotoaparat','camera'],
+  // Ostatni
+  'pouzdro':      ['pouzdro','obal','case','kryt'],
+  'obal':         ['obal','pouzdro','kryt','case'],
+  'drzak':        ['drzak','stojan','mount'],
+  'baterie':      ['baterie','akumulator','powerbank'],
+  'powerbank':    ['powerbank','baterie','nabij'],
+  'cistic':       ['cistic','cisteni','clean'],
+  'konzole':      ['konzole','playstation','xbox','nintendo','ps5','ps4'],
+  'playstation':  ['playstation','ps5','ps4','sony'],
+  'xbox':         ['xbox','microsoft'],
+  'nintendo':     ['nintendo','switch'],
+  // Barvy
+  'cerna':        ['cerna','black'],
+  'bila':         ['bila','white'],
+  'modra':        ['modra','blue'],
+  'cervena':      ['cervena','red'],
+  'zelena':       ['zelena','green'],
+  'stribrna':     ['stribrna','silver'],
+  'zlata':        ['zlata','gold'],
+  // Vlastnosti
+  'bezdratova':   ['bezdratov','wireless','wifi','bluetooth','bt'],
+  'bezdratovy':   ['bezdratov','wireless','wifi','bluetooth','bt'],
+  'bluetooth':    ['bluetooth','bt','bezdratov'],
+  'mechanicka':   ['mechanicka','mechanical'],
+  'herni':        ['herni','gaming','game'],
+  'gaming':       ['gaming','herni','game'],
+  'prenosny':     ['prenosny','portable','notebo'],
+  'kompaktni':    ['kompaktni','mini','small','maly'],
+};
+
+// Rozšíření tokenů o synonyma
+function expandTokens(tokens) {
+  const expanded = new Map(); // token -> váha
+  for (const t of tokens) {
+    expanded.set(t, (expanded.get(t) || 0) + 3); // originál = váha 3
+    const syns = SYNONYMS[t] || [];
+    for (const s of syns) {
+      expanded.set(s, (expanded.get(s) || 0) + 1); // synonymum = váha 1
+    }
+  }
+  return expanded;
+}
+
+// Editační vzdálenost (Levenshtein) - jen pro krátká slova
+function editDist(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 99;
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_, i) => Array.from({length: n+1}, (_, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+// Skórování jednoho produktu proti rozšířeným tokenům
+function scoreProduct(p, expandedTokens, originalTokens, phraseNorm) {
+  const nl = norm(p.nazev);
+  const kl = norm(p.kategorie + ' ' + p.vyrobce);
+  let score = 0;
+
+  // 1. Přesná fráze v názvu = velký bonus
+  if (phraseNorm && nl.includes(phraseNorm)) score += 20;
+
+  // 2. Skórování podle rozšířených tokenů
+  for (const [token, weight] of expandedTokens) {
+    const nt = norm(token);
+    if (nl.includes(nt)) score += weight * 3;       // match v názvu
+    else if (kl.includes(nt)) score += weight * 1;  // match v kategorii/výrobci
+  }
+
+  // 3. Fuzzy matching pro originální tokeny (pouze slova 4+ znaků, max edit dist 1)
+  for (const t of originalTokens) {
+    if (t.length < 4) continue;
+    const words = nl.split(' ');
+    for (const w of words) {
+      if (w.length < 3) continue;
+      if (editDist(t, w) === 1) { score += 2; break; }
+    }
+  }
+
+  // 4. Bonus za dostupnost skladem
+  if (p.dostupnost === '0') score += 1;
+
+  // 5. Malus za produkty kde žádný originální token není v názvu ani kategorii
+  //    (zabrání zobrazení totálně nerelevantních produktů)
+  const anyOriginalMatch = originalTokens.some(t => nl.includes(t) || kl.includes(t));
+  if (!anyOriginalMatch) score = Math.min(score, 2);
+
+  return score;
+}
+
+// Parser parametrů z názvu produktu
+function parseParams(nazev) {
+  const n = nazev.toLowerCase();
+  const params = {};
+  const disp = nazev.match(/(\d{1,2}\.?\d?)\s*"/);
+  if (disp) params.displej = parseFloat(disp[1]);
+  const ram = nazev.match(/(\d+)\+\d+GB/);
+  if (ram) params.ram = parseInt(ram[1]);
+  const stor = nazev.match(/\+(\d+)GB|\b(\d+)GB\b|\b(\d+)\s*TB\b/);
+  if (stor) {
+    const val = stor[1] || stor[2] || stor[3];
+    params.uloziste = stor[3] ? parseInt(val) * 1024 : parseInt(val);
+  }
+  if (n.includes('android')) { const ver = nazev.match(/Android\s*(\d+)/i); params.os = 'Android' + (ver ? ' ' + ver[1] : ''); }
+  else if (n.includes('ios') || n.includes('iphone') || n.includes('ipad') || n.includes('macbook')) params.os = 'iOS/macOS';
+  else if (n.includes('windows')) params.os = 'Windows';
+  const barvy = ['černá','bílá','modrá','červená','zelená','stříbrná','zlatá','fialová','růžová','šedá','titanová'];
+  for (const b of barvy) { if (n.includes(b)) { params.barva = b; break; } }
+  return params;
+}
+
+function paramsToStr(params) {
+  const parts = [];
+  if (params.displej) parts.push('displej: ' + params.displej + '"');
+  if (params.ram) parts.push('RAM: ' + params.ram + 'GB');
+  if (params.uloziste) parts.push(params.uloziste >= 1024 ? 'úložiště: ' + (params.uloziste/1024) + 'TB' : 'úložiště: ' + params.uloziste + 'GB');
+  if (params.os) parts.push('OS: ' + params.os);
+  if (params.barva) parts.push('barva: ' + params.barva);
+  return parts.length > 0 ? ' [' + parts.join(', ') + ']' : '';
+}
+
+// Kategoriova pravidla - zachovana jako fallback pro edge cases
 const CAT_RULES = [
   // Kabely a redukce - MUSÍ být před notebooky/telefony, jinak "kabel pro notebook" matchne notebook
   { words: ['kabel','redukce','adaptér kabel','hdmi kabel','displayport kabel','usb kabel','usb-c kabel','usb c kabel','nabíjecí kabel','prodlužovací kabel','audio kabel','jack kabel','optický kabel'],
@@ -272,98 +487,80 @@ const CAT_RULES = [
     must: ['Zahrada | '] },
 ];
 
-// Vyhledavani
+// Vyhledávání - pseudo-vektorový engine
 function search(query, max) {
   max = max || 30;
   if (products.length === 0) return [];
-  const q = query.toLowerCase();
+  const q = norm(query);
 
-  let catFilter = [];
-  for (const rule of CAT_RULES) {
-    if (rule.words.some(w => q.includes(w))) { catFilter = rule.must; break; }
-  }
+  // Tokenizace a rozšíření synonymy
+  const originalTokens = tokenize(q);
+  if (originalTokens.length === 0) return [];
+  const expandedTokens = expandTokens(originalTokens);
 
-  const kws = q.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
+  // Přesná fráze pro bonus (první 3 tokeny spojené)
+  const phraseNorm = originalTokens.slice(0, 3).join(' ');
 
-  // Filtr displeje z dotazu ("velký displej" = 6.5"+, konkrétní rozměr)
-  let minDisplej = null;
-  let maxDisplej = null;
-  if (/velk[ýá] displej|velk[áý] obrazovka/i.test(q)) minDisplej = 6.2;
-  if (/mal[ýá] displej|kompaktn/i.test(q)) maxDisplej = 6.2;
-  const dispMatch = q.match(/(\d{1,2}\.?\d?)\s*"/);
-  if (dispMatch) { minDisplej = parseFloat(dispMatch[1]) - 0.2; maxDisplej = parseFloat(dispMatch[1]) + 0.2; }
-  // Budget parsing - zachytit "10 000 Kč", "10000 Kč", "10 tisíc"
-  const bmRaw = q.match(/(\d[\d\s]{0,8})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?|k\b)/i);
+  // Budget parsing
+  const bmRaw = query.match(/(\d[\d\s]{0,8})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?|k\b)/i);
   const budget = bmRaw
     ? parseFloat(bmRaw[1].replace(/\s/g,'')) * (/tis|k\b/i.test(bmRaw[2]) && !/kc|kč/i.test(bmRaw[2]) ? 1000 : 1)
     : null;
 
-  // Must-contain filtr: pokud query obsahuje konkrétní produktové slovo,
-  // vyfiltrovat jen produkty kde je toto slovo přímo v názvu
-  const MUST_CONTAIN_WORDS = ['kabel','redukce','pouzdro','obal','stojánek','držák','nabíječka','baterie','myš','klávesnice','sluchátka','headset','tiskárna','monitor','projektor'];
-  let mustContain = null;
-  for (const w of MUST_CONTAIN_WORDS) {
-    if (q.includes(w)) { mustContain = w; break; }
+  // Filtr displeje
+  let minDisplej = null, maxDisplej = null;
+  if (/velk[ýá] displej|velk[áý] obrazovka/i.test(query)) minDisplej = 6.2;
+  if (/mal[ýá] displej|kompaktn/i.test(query)) maxDisplej = 6.2;
+  const dispMatch = query.match(/(\d{1,2}\.?\d?)\s*"/);
+  if (dispMatch) { minDisplej = parseFloat(dispMatch[1]) - 0.2; maxDisplej = parseFloat(dispMatch[1]) + 0.2; }
+
+  // CAT_RULES jako volitelné pre-filtrovani poolu (zrychlení u jednoznačných dotazů)
+  let pool = products;
+  let catFilter = [];
+  for (const rule of CAT_RULES) {
+    if (rule.words.some(w => norm(w).split(' ').every(wt => q.includes(wt)))) {
+      catFilter = rule.must; break;
+    }
+  }
+  if (catFilter.length > 0) {
+    const cf = products.filter(p => catFilter.some(f => norm(p.kategorie + ' ' + p.nazev).includes(norm(f))));
+    if (cf.length >= 5) pool = cf;
   }
 
-  let pool = products;
-  if (catFilter.length > 0) {
-    let cf = products.filter(p => catFilter.some(f => (p.kategorie + ' ' + p.nazev).toLowerCase().includes(f.toLowerCase())));
-    // Pokud hledáme telefon obecně, vyloučit tlačítkové a seniory pokud jsou i smartphony
-    if (catFilter.some(f => f.includes('Telefony | Mobiln'))) {
-      const smartphony = cf.filter(p => !p.kategorie.includes('Tlačítkové') && !p.kategorie.includes('Pro seniory') && !p.kategorie.includes('Ostatní telefony'));
-      if (smartphony.length >= 3) cf = smartphony;
-    }
-    if (cf.length >= 3) pool = cf;
-  }
+  // Budget filtr
   if (budget && budget > 500) {
     const bf = pool.filter(p => p.cena > 0 && p.cena <= budget * 1.1);
     if (bf.length >= 2) pool = bf;
   }
 
-  // Aplikovat must-contain filtr na název produktu
-  if (mustContain) {
-    const mcf = pool.filter(p => p.nazev.toLowerCase().includes(mustContain));
-    if (mcf.length >= 2) pool = mcf;
-  }
-
-  // Filtr podle velikosti displeje
+  // Filtr displeje
   if (minDisplej || maxDisplej) {
     const df = pool.filter(p => {
       const par = parseParams(p.nazev);
-      if (!par.displej) return true; // produkty bez displeje nevylučovat
+      if (!par.displej) return true;
       if (minDisplej && par.displej < minDisplej) return false;
       if (maxDisplej && par.displej > maxDisplej) return false;
       return true;
     });
     if (df.length >= 3) pool = df;
-    // Pokud filtr vrátí méně než 3, seřadit pool podle velikosti displeje sestupně
-    else if (minDisplej) {
-      pool = pool.sort((a, b) => {
-        const da = parseParams(a.nazev).displej || 0;
-        const db = parseParams(b.nazev).displej || 0;
-        return db - da;
-      });
-    }
+    else if (minDisplej) pool = pool.sort((a,b) => (parseParams(b.nazev).displej||0) - (parseParams(a.nazev).displej||0));
   }
 
-  return pool.map(p => {
-    const nl = p.nazev.toLowerCase();
-    const hl = (p.kategorie + ' ' + p.vyrobce).toLowerCase();
-    const ns = kws.reduce((s, kw) => s + (nl.includes(kw) ? 3 : 0), 0);
-    const cs = kws.reduce((s, kw) => s + (hl.includes(kw) ? 1 : 0), 0);
-    return { ...p, score: ns + cs + (p.dostupnost === '0' ? 1 : 0) };
-  }).filter(p => p.score > 0)
-    .sort((a, b) => b.score !== a.score ? b.score - a.score : a.cena - b.cena)
-    .slice(0, max)
-    .map(p => ({
-      nazev: p.nazev,
-      cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kc' : 'cena na dotaz',
-      url: p.url,
-      dostupnost: p.dostupnost === '0' ? 'Skladem' : (parseInt(p.dostupnost) <= 3 ? 'Do 3 dni' : 'Do ' + p.dostupnost + ' dni'),
-      kategorie: p.kategorie,
-      imgurl: p.imgurl,
-    }));
+  // Skórování všech produktů v poolu
+  const scored = pool
+    .map(p => ({ p, score: scoreProduct(p, expandedTokens, originalTokens, phraseNorm) }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score !== a.score ? b.score - a.score : a.p.cena - b.p.cena)
+    .slice(0, max);
+
+  return scored.map(({ p }) => ({
+    nazev: p.nazev,
+    cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kc' : 'cena na dotaz',
+    url: p.url,
+    dostupnost: p.dostupnost === '0' ? 'Skladem' : (parseInt(p.dostupnost) <= 3 ? 'Do 3 dni' : 'Do ' + p.dostupnost + ' dni'),
+    kategorie: p.kategorie,
+    imgurl: p.imgurl,
+  }));
 }
 
 // System prompt
