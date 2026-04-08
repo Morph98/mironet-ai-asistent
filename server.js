@@ -270,13 +270,31 @@ function search(query, max) {
 function buildPrompt(found) {
   const pobocky = CONFIG.POBOCKY.map(p => '- ' + p.nazev + ': ' + p.adresa).join('\n');
   const katalog = found.length > 0
-    ? '\n\nPRODUKTY Z KATALOGU:\n' + found.map((p, idx) =>
-        '[' + idx + '] ' + p.nazev + ' | ' + p.cena + ' | ' + p.dostupnost +
+    ? '\n\nPRODUKTY Z KATALOGU (pouze tyto existuji v nasi nabidce, zadne jine NEVYMYSLEJ):\n' +
+      found.map((p, idx) =>
+        '[' + idx + '] ' + p.nazev + ' | ' + p.cena + ' | ' + (p.dostupnost === '0' ? 'Skladem' : 'Dostupnost: ' + p.dostupnost + ' dni') +
         (p.popis ? ' | ' + p.popis.substring(0, 100) : '')
       ).join('\n')
-    : '\n\n(Produkt nenalezen v katalogu - nasmer na mironet.cz nebo 777 900 777)';
+    : '\n\n(Pro tento dotaz neni produkt v katalogu - uprimne rici a nasmerovat na mironet.cz)';
 
-  return 'Jsi AI asistent e-shopu Mironet.cz - ceskeho specialisty na IT techniku, notebooky, komponenty, monitory, tiskarny, telefony a elektroniku.\n\nKomunikujes cesky, pratelsky a odborne. Pises bez markdown formatovani. Pis gramaticky spravne cesky.\n\nPOBOCKY:\n' + pobocky + '\n\nLINKA: 777 900 777 (Po-Pa 8-17h)\nOBJEDNAVKY: mironet.cz/muj-ucet\n\nPravidla:\n- Navazuj na historii konverzace\n- Doporucuj produkty z katalogu nize\n- Nikdy nevymyslej produkty ani ceny\n- Max 4-5 vet' + katalog;
+  return `Jsi AI asistent e-shopu Mironet.cz.
+
+Komunikujes cesky, pratelsky a odborne. Pises bez markdown formatovani (zadne **tucne**, zadne # nadpisy). Pis gramaticky spravne cesky.
+
+POBOCKY:
+${pobocky}
+
+LINKA: 777 900 777 (Po-Pa 8-17h)
+OBJEDNAVKY: mironet.cz/muj-ucet
+
+PRAVIDLA:
+- Doporucuj POUZE produkty ze seznamu nize - pokud produkt v seznamu neni, NIKDY ho nevymyslej
+- Pokud pozadovany produkt v katalogu neni, uprimne to rici a nasmerovat na mironet.cz
+- NIKDY nepis URL adresy do textu odpovedi
+- Produkty jsou zakaznikovi zobrazeny v kartach pod textem - nemusis je popisovat detailne
+- Na KONEC odpovedi vzdy pridej tag s indexy produktu ktere doporucujes (na novy radek): INDEXY:[0,2,4]
+- Pokud zadny produkt nedoporuces, napsat INDEXY:[]
+- Max 4-5 vet${katalog}`;
 }
 
 // Claude API
