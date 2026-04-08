@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mironet AI Asistent</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f0f0f0; }
+
+  /* ── Login ── */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    height: 100vh; background: #f0f0f0;
+  }
+  .login-box {
+    background: #fff; border-radius: 16px; padding: 40px;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08); text-align: center;
+  }
+  .login-logo {
+    width: 48px; height: 48px; background: #E30613; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+  }
+  .login-box h1 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
+  .login-box p  { font-size: 14px; color: #888; margin-bottom: 28px; }
+  .login-box input {
+    width: 100%; padding: 12px 16px; border: 1.5px solid #e0e0e0;
+    border-radius: 10px; font-size: 15px; outline: none; margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .login-box input:focus { border-color: #E30613; }
+  .login-btn {
+    width: 100%; padding: 13px; background: #E30613; color: #fff;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .login-btn:hover { opacity: .88; }
+  .login-error {
+    margin-top: 12px; font-size: 13px; color: #dc2626;
+    display: none;
+  }
+  .login-note { margin-top: 16px; font-size: 11px; color: #bbb; }
+
+  /* ── Chat ── */
+  #chat-screen { display: none; flex-direction: column; height: 100vh; }
+
+  .chat-wrap {
+    display: flex; flex-direction: column; height: 100vh;
+    max-width: 900px; margin: 0 auto; width: 100%;
+    background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.08);
+  }
+  .hdr {
+    background: #E30613; padding: 14px 24px;
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  }
+  .hdr-logo {
+    width: 32px; height: 32px; background: rgba(255,255,255,0.2);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  }
+  .hdr-text { flex: 1; }
+  .hdr-title { font-size: 17px; font-weight: 600; color: #fff; }
+  .hdr-sub { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 1px; }
+  .hdr-right { display: flex; align-items: center; gap: 8px; }
+  .online-dot { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; }
+  .online-lbl { font-size: 12px; color: rgba(255,255,255,0.85); }
+  .logout-btn {
+    background: rgba(255,255,255,0.15); border: none; border-radius: 7px;
+    color: #fff; font-size: 12px; padding: 6px 12px; cursor: pointer;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+  .reset-btn {
+    background: rgba(255,255,255,0.15); border: none; border-radius: 7px;
+    color: #fff; font-size: 12px; padding: 6px 12px; cursor: pointer;
+  }
+  .reset-btn:hover { background: rgba(255,255,255,0.25); }
+
+  #statusBar {
+    font-size: 12px; padding: 7px 24px; text-align: center;
+    flex-shrink: 0; display: none;
+  }
+  #statusBar.ok   { background: #f0fff4; color: #15803d; border-bottom: 1px solid #bbf7d0; display: block; }
+  #statusBar.warn { background: #fffbeb; color: #92400e; border-bottom: 1px solid #fde68a; display: block; }
+  #statusBar.err  { background: #fef2f2; color: #dc2626; border-bottom: 1px solid #fecaca; display: block; }
+
+  .body {
+    flex: 1; overflow-y: auto; padding: 24px 24px 12px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .body::-webkit-scrollbar { width: 5px; }
+  .body::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
+
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg.user { flex-direction: row-reverse; }
+  .av {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 2px;
+  }
+  .av-b { background: #fde8e8; color: #b91c1c; }
+  .av-u { background: #f0f0f0; color: #555; }
+  .bub {
+    padding: 12px 16px; border-radius: 18px;
+    font-size: 15px; line-height: 1.7; max-width: 74%;
+  }
+  .msg.bot .bub { background: #f5f5f5; border: 1px solid #e8e8e8; color: #1a1a1a; border-top-left-radius: 4px; }
+  .msg.user .bub { background: #E30613; color: #fff; border-top-right-radius: 4px; }
+
+  .pcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+  .pc {
+    border: 1px solid #e8e8e8; border-radius: 12px; padding: 12px 14px;
+    background: #fff; display: flex; flex-direction: column; gap: 5px;
+    cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .pc:hover { border-color: #E30613; box-shadow: 0 2px 8px rgba(227,6,19,0.1); }
+  .pc-img {
+    width: calc(100% + 28px); margin: -12px -14px 10px;
+    height: 120px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; border-bottom: 1px solid #f0f0f0;
+    border-radius: 12px 12px 0 0; background: #fafafa;
+  }
+  .pc-img img { max-height: 110px; max-width: 100%; object-fit: contain; padding: 8px; }
+  .pc-name { font-size: 13px; font-weight: 500; color: #1a1a1a; line-height: 1.4; }
+  .pc-kat  { font-size: 11px; color: #aaa; }
+  .pc-bot  { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .pc-stock-ok { font-size: 11px; color: #16a34a; font-weight: 500; }
+  .pc-stock-no { font-size: 11px; color: #dc2626; }
+  .pc-price { font-size: 15px; font-weight: 700; color: #E30613; }
+
+  .typing { display: flex; gap: 5px; align-items: center; padding: 12px 16px; }
+  .typing span { width: 8px; height: 8px; border-radius: 50%; background: #bbb; animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+
+  .ftr { border-top: 1px solid #ececec; padding: 14px 24px 16px; background: #fff; flex-shrink: 0; }
+  .ctx-bar { font-size: 12px; color: #bbb; text-align: center; margin-bottom: 10px; }
+  .ctx-bar span { color: #E30613; font-weight: 500; }
+  .qbtns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .qb { font-size: 12px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 16px; background: #fafafa; color: #444; cursor: pointer; }
+  .qb:hover { border-color: #E30613; color: #E30613; }
+  .irow { display: flex; gap: 10px; align-items: center; }
+  .inp {
+    flex: 1; border: 1.5px solid #e0e0e0; border-radius: 26px;
+    padding: 12px 20px; font-size: 15px; outline: none; background: #fafafa; color: #1a1a1a;
+  }
+  .inp:focus { border-color: #E30613; background: #fff; }
+  .sbtn {
+    width: 46px; height: 46px; border-radius: 50%; background: #E30613;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .sbtn:hover { opacity: .88; }
+  .sbtn:disabled { opacity: .35; cursor: default; }
+  .disc { font-size: 11px; color: #ccc; text-align: center; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 20 20" width="24" height="24">
+        <rect x="2" y="2" width="7" height="7" fill="#fff" rx="1"/>
+        <rect x="11" y="2" width="7" height="7" fill="#fff" rx="1"/>
+        <rect x="2" y="11" width="7" height="7" fill="#fff" rx="1"/>
+        <rect x="11" y="11" width="7" height="7" fill="#fff" rx="1"/>
+      </svg>
+    </div>
+    <h1>Mironet AI Asistent</h1>
+    <p>Testovací prostředí — přihlaste se heslem</p>
+    <input type="password" id="pwd" placeholder="Zadejte heslo..." onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">Přihlásit se</button>
+    <div class="login-error" id="loginErr">Špatné heslo, zkuste znovu.</div>
+    <p class="login-note">Přístup pouze pro oprávněné osoby · Mironet.cz a.s.</p>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="chat-screen">
+  <div class="chat-wrap">
+    <div class="hdr">
+      <div class="hdr-logo">
+        <svg viewBox="0 0 20 20" width="18" height="18">
+          <rect x="2" y="2" width="7" height="7" fill="#E30613" rx="1"/>
+          <rect x="11" y="2" width="7" height="7" fill="#E30613" rx="1"/>
+          <rect x="2" y="11" width="7" height="7" fill="#E30613" rx="1"/>
+          <rect x="11" y="11" width="7" height="7" fill="#E30613" rx="1"/>
+        </svg>
+      </div>
+      <div class="hdr-text">
+        <div class="hdr-title">Mironet AI asistent</div>
+        <div class="hdr-sub">Testovací prostředí · Live katalog</div>
+      </div>
+      <div class="hdr-right">
+        <div class="online-dot"></div>
+        <div class="online-lbl">online</div>
+        <button class="reset-btn" onclick="resetChat()">Nový chat</button>
+        <button class="logout-btn" onclick="logout()">Odhlásit</button>
+      </div>
+    </div>
+
+    <div id="statusBar"></div>
+
+    <div class="body" id="bd">
+      <div class="msg bot">
+        <div class="av av-b">M</div>
+        <div class="bub">Ahoj! Jsem AI asistent Mironetu napojený na aktuální katalog. Pomůžu vám vybrat správný produkt, porovnat parametry nebo odpovím na dotazy k objednávce. 😊</div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <div class="ctx-bar" id="ctx">Konverzační paměť: <span>nový chat</span></div>
+      <div class="qbtns" id="qb">
+        <button class="qb" onclick="sq('Odpadkový koš do kuchyně do 500 Kč')">Odpadkový koš</button>
+        <button class="qb" onclick="sq('Doporučte hrnce na vaření')">Hrnce na vaření</button>
+        <button class="qb" onclick="sq('Kuchyňské nože do 1 000 Kč')">Kuchyňské nože</button>
+        <button class="qb" onclick="sq('Koupelnové doplňky')">Koupelnové doplňky</button>
+        <button class="qb" onclick="sq('Vonné svíčky')">Vonné svíčky</button>
+        <button class="qb" onclick="sq('Kdy mi přijde objednávka?')">Stav objednávky</button>
+      </div>
+      <div class="irow">
+        <input class="inp" id="ci" type="text"
+          placeholder="Napište dotaz..."
+          onkeydown="if(event.key==='Enter')sm()">
+        <button class="sbtn" id="sb" onclick="sm()">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="#fff">
+            <path d="M3 10L17 3L11.5 10L17 17Z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="disc" id="disc">Powered by Claude AI · mironet.cz · 777 900 777</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let sessionToken = sessionStorage.getItem('mironet_token') || '';
+let history = [];
+let busy = false;
+
+// Zkontroluj zda už máme token
+if (sessionToken) {
+  showChat();
+}
+
+async function login() {
+  const pwd = document.getElementById('pwd').value;
+  const err = document.getElementById('loginErr');
+  err.style.display = 'none';
+
+  try {
+    const res = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      sessionToken = data.token;
+      sessionStorage.setItem('mironet_token', sessionToken);
+      showChat();
+    } else {
+      err.style.display = 'block';
+      document.getElementById('pwd').value = '';
+      document.getElementById('pwd').focus();
+    }
+  } catch(e) {
+    err.textContent = 'Chyba připojení k serveru.';
+    err.style.display = 'block';
+  }
+}
+
+function showChat() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('chat-screen').style.display = 'flex';
+  checkHealth();
+}
+
+function logout() {
+  sessionStorage.removeItem('mironet_token');
+  sessionToken = '';
+  history = [];
+  document.getElementById('chat-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pwd').value = '';
+}
+
+async function checkHealth() {
+  try {
+    const r = await fetch('/health');
+    const d = await r.json();
+    const bar = document.getElementById('statusBar');
+    if (!d.apiKlicNastaven) {
+      bar.className = 'err';
+      bar.textContent = '⚠ ANTHROPIC_API_KEY není nastaven na serveru';
+    } else if (d.produktu === 0) {
+      bar.className = 'warn';
+      bar.textContent = '⚠ Katalog není načten — asistent funguje bez produktů';
+    } else {
+      bar.className = 'ok';
+      bar.textContent = '✓ Katalog: ' + d.produktu.toLocaleString('cs-CZ') + ' produktů · ' + d.pobocky.join(', ') + ' · ' + (d.model || 'Claude');
+    }
+    document.getElementById('disc').textContent =
+      d.produktu.toLocaleString('cs-CZ') + ' produktů · ' + (d.model || 'Claude AI') + ' · 777 900 777';
+  } catch(e) {
+    const bar = document.getElementById('statusBar');
+    bar.className = 'err';
+    bar.textContent = '⚠ Server neodpovídá';
+  }
+}
+
+function updateCtx() {
+  const n = history.length;
+  document.getElementById('ctx').innerHTML = n === 0
+    ? 'Konverzační paměť: <span>nový chat</span>'
+    : 'Konverzační paměť: <span>' + n + ' zpráv v kontextu</span>';
+}
+
+function addMsg(role, html) {
+  const bd = document.getElementById('bd');
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  d.innerHTML = '<div class="av ' + (role === 'bot' ? 'av-b' : 'av-u') + '">' + (role === 'bot' ? 'M' : 'Vy') + '</div><div class="bub">' + html + '</div>';
+  bd.appendChild(d);
+  bd.scrollTop = bd.scrollHeight;
+}
+
+function renderProducts(products) {
+  if (!products || products.length === 0) return '';
+  const cards = products.map(function(p) {
+    var skladem = p.dostupnost === 'Skladem';
+    var onclick = p.url ? 'onclick="window.open(\'' + p.url + '\',\'_blank\')"' : '';
+    var img = p.imgurl
+      ? '<div class="pc-img"><img src="' + p.imgurl + '" alt="" onerror="this.parentNode.style.display=\'none\'"></div>'
+      : '';
+    return '<div class="pc" ' + onclick + '>' + img +
+      '<div class="pc-name">' + p.nazev + '</div>' +
+      '<div class="pc-kat">' + (p.kategorie || '') + '</div>' +
+      '<div class="pc-bot">' +
+        '<span class="' + (skladem ? 'pc-stock-ok' : 'pc-stock-no') + '">' + (skladem ? '✓ Skladem' : '⏱ ' + p.dostupnost) + '</span>' +
+        '<span class="pc-price">' + p.cena + '</span>' +
+      '</div></div>';
+  }).join('');
+  return '<div class="pcards">' + cards + '</div>';
+}
+
+function showTyping() {
+  const bd = document.getElementById('bd');
+  const d = document.createElement('div');
+  d.className = 'msg bot'; d.id = 'typ';
+  d.innerHTML = '<div class="av av-b">M</div><div class="bub typing"><span></span><span></span><span></span></div>';
+  bd.appendChild(d); bd.scrollTop = bd.scrollHeight;
+}
+function hideTyping() { var e = document.getElementById('typ'); if(e) e.remove(); }
+
+function esc(s) {
+  return s
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+}
+
+function sq(t) {
+  document.getElementById('qb').style.display = 'none';
+  document.getElementById('ci').value = t;
+  sm();
+}
+
+function resetChat() {
+  history = [];
+  document.getElementById('bd').innerHTML =
+    '<div class="msg bot"><div class="av av-b">M</div><div class="bub">Ahoj! Jsem AI asistent Mironetu. Na co se ptáte? 😊</div></div>';
+  document.getElementById('qb').style.display = 'flex';
+  updateCtx();
+}
+
+async function sm() {
+  const ci = document.getElementById('ci');
+  const sb = document.getElementById('sb');
+  const text = ci.value.trim();
+  if (!text || busy) return;
+  ci.value = ''; busy = true; sb.disabled = true;
+  document.getElementById('qb').style.display = 'none';
+  addMsg('user', text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  showTyping();
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-session-token': sessionToken
+      },
+      body: JSON.stringify({ messages: history, userMessage: text })
+    });
+
+    if (res.status === 401) {
+      hideTyping();
+      logout();
+      return;
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Server error ' + res.status);
+    }
+
+    const data = await res.json();
+    hideTyping();
+    addMsg('bot', esc(data.reply) + renderProducts(data.foundProducts));
+    history.push({ role: 'user', content: text });
+    history.push({ role: 'assistant', content: data.reply });
+    updateCtx();
+  } catch(e) {
+    hideTyping();
+    addMsg('bot', 'Omlouvám se, nastala chyba: <strong>' + e.message + '</strong>');
+  }
+  busy = false; sb.disabled = false; ci.focus();
+}
+</script>
+</body>
+</html>
