@@ -279,7 +279,7 @@ function search(query, max) {
   // Filtr displeje z dotazu ("velký displej" = 6.5"+, konkrétní rozměr)
   let minDisplej = null;
   let maxDisplej = null;
-  if (/velk[ýá] displej|velk[áý] obrazovka/i.test(q)) minDisplej = 6.4;
+  if (/velk[ýá] displej|velk[áý] obrazovka/i.test(q)) minDisplej = 6.2;
   if (/mal[ýá] displej|kompaktn/i.test(q)) maxDisplej = 6.2;
   const dispMatch = q.match(/(\d{1,2}\.?\d?)\s*"/);
   if (dispMatch) { minDisplej = parseFloat(dispMatch[1]) - 0.2; maxDisplej = parseFloat(dispMatch[1]) + 0.2; }
@@ -313,7 +313,15 @@ function search(query, max) {
       if (maxDisplej && par.displej > maxDisplej) return false;
       return true;
     });
-    if (df.length >= 2) pool = df;
+    if (df.length >= 3) pool = df;
+    // Pokud filtr vrátí méně než 3, seřadit pool podle velikosti displeje sestupně
+    else if (minDisplej) {
+      pool = pool.sort((a, b) => {
+        const da = parseParams(a.nazev).displej || 0;
+        const db = parseParams(b.nazev).displej || 0;
+        return db - da;
+      });
+    }
   }
 
   return pool.map(p => {
@@ -402,7 +410,7 @@ app.post('/chat', requireAuth, async (req, res) => {
     const rawReply = await callClaude(history, buildPrompt(found));
     // Parsovat indexy produktu z odpovedi (format: INDEXY:[0,2,4])
     const indexMatch = rawReply.match(/INDEXY:\s*\[([\d,\s]+)\]/);
-    const reply = rawReply.replace(/\nINDEXY:\s*\[[\d,\s]+\]/, '').trim();
+    const reply = rawReply.replace(/\n?INDEXY:\s*\[[\d,\s]*\]\s*/g, '').trim();
     let toShow;
     if (indexMatch) {
       const idxs = indexMatch[1].split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n < found.length);
