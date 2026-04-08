@@ -189,11 +189,17 @@ const CAT_RULES = [
   // Kabely a redukce - MUSÍ být před notebooky/telefony, jinak "kabel pro notebook" matchne notebook
   { words: ['kabel','redukce','adaptér kabel','hdmi kabel','displayport kabel','usb kabel','usb-c kabel','usb c kabel','nabíjecí kabel','prodlužovací kabel','audio kabel','jack kabel','optický kabel'],
     must: ['Příslušenství | Kabely a redukce', 'Kabely a konektory', 'Kabely | '] },
+  // Telefony - MUSÍ být před monitory, jinak "iphone s velkým displejem" matchne Monitory
+  { words: ['smartphone','chytrý telefon','android telefon','iphone','samsung galaxy','xiaomi','motorola','google pixel','oneplus','honor','realme','vivo','poco'],
+    must: ['Telefony | Mobilní telefony | Apple', 'Telefony | Mobilní telefony | Samsung', 'Telefony | Mobilní telefony | Xiaomi', 'Telefony | Mobilní telefony | Motorola', 'Telefony | Mobilní telefony | Google', 'Telefony | Mobilní telefony | OnePlus', 'Telefony | Mobilní telefony | HONOR', 'Telefony | Mobilní telefony | Realme', 'Telefony | Mobilní telefony | POCO', 'Telefony | Mobilní telefony | VIVO', 'Telefony | Mobilní telefony | ZTE'] },
+  // Obecně mobilní telefon
+  { words: ['telefon','mobil','mobilní telefon'],
+    must: ['Telefony | Mobilní telefony'] },
   // Notebooky - kategorie "Notebooky | ..."
   { words: ['notebook','laptop','ultrabook','macbook','přenosný počítač'],
     must: ['Notebooky | '] },
-  // Monitory - kategorie "Monitory | ..."
-  { words: ['monitor','displej','lcd','obrazovka'],
+  // Monitory - 'displej' a 'obrazovka' odebrány - konflikty s telefony/notebooky
+  { words: ['monitor','lcd','oled monitor','herní monitor'],
     must: ['Monitory | '] },
   // Grafické karty
   { words: ['grafická karta','grafiku','gpu','rtx','gtx','radeon','geforce','grafická'],
@@ -433,7 +439,9 @@ app.post('/chat', requireAuth, async (req, res) => {
       const idxs = indexMatch[1].split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n < found.length);
       toShow = idxs.map(i => found[i]).filter(Boolean).slice(0, 5);
     }
-    if (!toShow || toShow.length === 0) toShow = found.slice(0, 3);
+    // Fallback pouze pokud AI nevrátila explicitní INDEXY:[] (prázdný seznam)
+    const explicitEmpty = rawReply.includes('INDEXY:[]') || rawReply.includes('INDEXY: []');
+    if ((!toShow || toShow.length === 0) && !explicitEmpty) toShow = found.slice(0, 3);
     res.json({ reply, foundProducts: toShow });
   } catch(e) {
     console.error('Claude error:', e.message);
