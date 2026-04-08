@@ -292,7 +292,7 @@ async function checkHealth() {
     const r = await fetch('/health');
     const d = await r.json();
     const bar = document.getElementById('statusBar');
-    if (!d.apiKlicNastaven) {
+    if (!d.apiKlic) {
       bar.className = 'err';
       bar.textContent = '⚠ ANTHROPIC_API_KEY není nastaven na serveru';
     } else if (d.produktu === 0) {
