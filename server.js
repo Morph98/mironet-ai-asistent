@@ -132,6 +132,55 @@ function loadFromParts() {
   }
 }
 
+// Parser parametrů z názvu produktu
+function parseParams(nazev) {
+  const n = nazev.toLowerCase();
+  const params = {};
+
+  // Velikost displeje: 6.7", 15.6", 27" atd.
+  const disp = nazev.match(/(\d{1,2}\.?\d?)\s*"/);
+  if (disp) params.displej = parseFloat(disp[1]);
+
+  // RAM: 8GB, 16GB, 12+256GB (první číslo = RAM)
+  const ram = nazev.match(/(\d+)\+\d+GB/);
+  if (ram) params.ram = parseInt(ram[1]);
+
+  // Úložiště: 256GB, 512GB, 1TB
+  const stor = nazev.match(/\+(\d+)GB|\b(\d+)GB\b|\b(\d+)\s*TB\b/);
+  if (stor) {
+    const val = stor[1] || stor[2] || stor[3];
+    params.uloziste = stor[3] ? parseInt(val) * 1024 : parseInt(val);
+  }
+
+  // OS
+  if (n.includes('android')) {
+    const ver = nazev.match(/Android\s*(\d+)/i);
+    params.os = 'Android' + (ver ? ' ' + ver[1] : '');
+  } else if (n.includes('ios') || n.includes('iphone') || n.includes('ipad') || n.includes('macbook')) {
+    params.os = 'iOS/macOS';
+  } else if (n.includes('windows')) {
+    params.os = 'Windows';
+  }
+
+  // Barva
+  const barvy = ['černá','bílá','modrá','červená','zelená','stříbrná','zlatá','fialová','růžová','šedá','titanová'];
+  for (const b of barvy) {
+    if (n.includes(b)) { params.barva = b; break; }
+  }
+
+  return params;
+}
+
+function paramsToStr(params) {
+  const parts = [];
+  if (params.displej) parts.push('displej: ' + params.displej + '"');
+  if (params.ram) parts.push('RAM: ' + params.ram + 'GB');
+  if (params.uloziste) parts.push(params.uloziste >= 1024 ? 'úložiště: ' + (params.uloziste/1024) + 'TB' : 'úložiště: ' + params.uloziste + 'GB');
+  if (params.os) parts.push('OS: ' + params.os);
+  if (params.barva) parts.push('barva: ' + params.barva);
+  return parts.length > 0 ? ' [' + parts.join(', ') + ']' : '';
+}
+
 // Stopslova
 const STOP = new Set(['pro','ke','na','do','ze','jak','kde','co','nebo','jen','chci','mam','hledam','vybrat','koupit','nejlepsi','dobry']);
 
@@ -226,6 +275,14 @@ function search(query, max) {
   }
 
   const kws = q.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
+
+  // Filtr displeje z dotazu ("velký displej" = 6.5"+, konkrétní rozměr)
+  let minDisplej = null;
+  let maxDisplej = null;
+  if (/velk[ýá] displej|velk[áý] obrazovka/i.test(q)) minDisplej = 6.4;
+  if (/mal[ýá] displej|kompaktn/i.test(q)) maxDisplej = 6.2;
+  const dispMatch = q.match(/(\d{1,2}\.?\d?)\s*"/);
+  if (dispMatch) { minDisplej = parseFloat(dispMatch[1]) - 0.2; maxDisplej = parseFloat(dispMatch[1]) + 0.2; }
   // Budget parsing - zachytit "10 000 Kč", "10000 Kč", "10 tisíc"
   const bmRaw = q.match(/(\d[\d\s]{0,8})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?|k\b)/i);
   const budget = bmRaw
@@ -245,6 +302,18 @@ function search(query, max) {
   if (budget && budget > 500) {
     const bf = pool.filter(p => p.cena > 0 && p.cena <= budget * 1.1);
     if (bf.length >= 2) pool = bf;
+  }
+
+  // Filtr podle velikosti displeje
+  if (minDisplej || maxDisplej) {
+    const df = pool.filter(p => {
+      const par = parseParams(p.nazev);
+      if (!par.displej) return true; // produkty bez displeje nevylučovat
+      if (minDisplej && par.displej < minDisplej) return false;
+      if (maxDisplej && par.displej > maxDisplej) return false;
+      return true;
+    });
+    if (df.length >= 2) pool = df;
   }
 
   return pool.map(p => {
@@ -272,8 +341,7 @@ function buildPrompt(found) {
   const katalog = found.length > 0
     ? '\n\nPRODUKTY Z KATALOGU (pouze tyto existuji v nasi nabidce, zadne jine NEVYMYSLEJ):\n' +
       found.map((p, idx) =>
-        '[' + idx + '] ' + p.nazev + ' | ' + p.cena + ' | ' + (p.dostupnost === '0' ? 'Skladem' : 'Dostupnost: ' + p.dostupnost + ' dni') +
-        (p.popis ? ' | ' + p.popis.substring(0, 100) : '')
+        '[' + idx + '] ' + p.nazev + paramsToStr(parseParams(p.nazev)) + ' | ' + p.cena + ' | ' + (p.dostupnost === '0' ? 'Skladem' : 'Dostupnost: ' + p.dostupnost + ' dni')
       ).join('\n')
     : '\n\n(Pro tento dotaz neni produkt v katalogu - uprimne rici a nasmerovat na mironet.cz)';
 
