@@ -206,105 +206,281 @@ function tokenize(s) {
 }
 
 // Synonymní slovník - rozšíření dotazu o příbuzné pojmy
-// Klíč = co uživatel napíše, hodnoty = co hledat v katalogu
 const SYNONYMS = {
-  // Telefony
-  'telefon':      ['telefon','mobil','smartphone','iphone','samsung','xiaomi'],
-  'mobil':        ['mobil','telefon','smartphone','iphone','samsung','xiaomi'],
-  'smartphone':   ['smartphone','telefon','mobil','iphone','android'],
-  'iphone':       ['iphone','apple'],
-  'samsung':      ['samsung'],
-  'xiaomi':       ['xiaomi','redmi','poco'],
-  'android':      ['android','samsung','xiaomi','motorola','honor','realme'],
-  // Notebooky
-  'notebook':     ['notebook','laptop','ultrabook','macbook'],
-  'laptop':       ['laptop','notebook','ultrabook'],
-  'macbook':      ['macbook','apple'],
-  'ultrabook':    ['ultrabook','notebook','laptop'],
-  // Monitory
-  'monitor':      ['monitor','display'],
-  'obrazovka':    ['monitor','display','obrazovka'],
-  // Komponenty
-  'grafika':      ['graficka','gpu','geforce','radeon','rtx','gtx'],
-  'graficka':     ['graficka','gpu','geforce','radeon','rtx','gtx'],
-  'gpu':          ['gpu','graficka','geforce','radeon','rtx','gtx'],
-  'rtx':          ['rtx','geforce','nvidia'],
-  'gtx':          ['gtx','geforce','nvidia'],
-  'procesor':     ['procesor','cpu','ryzen','core','intel'],
-  'cpu':          ['cpu','procesor','ryzen','intel','core'],
-  'ryzen':        ['ryzen','amd'],
-  'ram':          ['ram','ddr','dimm','sodimm','pameti'],
-  'pameti':       ['ram','ddr','pameti'],
-  'ssd':          ['ssd','nvme','m.2'],
-  'nvme':         ['nvme','ssd','m.2'],
-  'hdd':          ['hdd','pevny disk','harddisk'],
-  // Periferie
-  'mys':          ['mys','mouse'],
-  'klavesnice':   ['klavesnice','keyboard'],
-  'sluchatka':    ['sluchatka','headset','headphones','airpods'],
-  'headset':      ['headset','sluchatka'],
-  'airpods':      ['airpods','sluchatka','apple'],
-  // Kabely
-  'kabel':        ['kabel','cable'],
-  'hdmi':         ['hdmi'],
-  'usb':          ['usb'],
-  'usbc':         ['usb-c','usb c','type-c','typec'],
-  'nabijeni':     ['nabij','charger','nabijec'],
-  'nabijec':      ['nabijec','charger','nabij','adaptér'],
-  'adapter':      ['adapter','adaptér','redukce'],
-  'redukce':      ['redukce','adapter','adaptér'],
-  // Tablety
-  'tablet':       ['tablet','ipad','android'],
-  'ipad':         ['ipad','apple','tablet'],
-  // Tisk
-  'tiskarna':     ['tiskarna','printer','multifunkc'],
-  'toner':        ['toner','cartridge','napl'],
-  'cartridge':    ['cartridge','toner','napl'],
-  // Sit
-  'router':       ['router','wifi','wi-fi'],
-  'wifi':         ['wifi','wi-fi','router','wireless'],
-  'switch':       ['switch','prepinac'],
-  // Skladovani
-  'flash':        ['flash','pendrive','usb disk'],
-  'pendrive':     ['pendrive','flash','usb disk'],
-  'nas':          ['nas','uloziste','storage'],
-  // Audio/Video
-  'reproduktor':  ['reproduktor','speaker','soundbar'],
-  'soundbar':     ['soundbar','reproduktor','speaker'],
-  'televizor':    ['televizor','televize','tv','oled','qled'],
-  'televize':     ['televize','televizor','tv'],
-  'projektor':    ['projektor','projector','beamer'],
-  // Foto
-  'fotoaparat':   ['fotoaparat','kamera','dslr','bezzrcadlovy'],
-  'kamera':       ['kamera','fotoaparat','camera'],
-  // Ostatni
-  'pouzdro':      ['pouzdro','obal','case','kryt'],
-  'obal':         ['obal','pouzdro','kryt','case'],
-  'drzak':        ['drzak','stojan','mount'],
-  'baterie':      ['baterie','akumulator','powerbank'],
-  'powerbank':    ['powerbank','baterie','nabij'],
-  'cistic':       ['cistic','cisteni','clean'],
-  'konzole':      ['konzole','playstation','xbox','nintendo','ps5','ps4'],
-  'playstation':  ['playstation','ps5','ps4','sony'],
-  'xbox':         ['xbox','microsoft'],
-  'nintendo':     ['nintendo','switch'],
-  // Barvy
-  'cerna':        ['cerna','black'],
-  'bila':         ['bila','white'],
-  'modra':        ['modra','blue'],
-  'cervena':      ['cervena','red'],
-  'zelena':       ['zelena','green'],
-  'stribrna':     ['stribrna','silver'],
-  'zlata':        ['zlata','gold'],
-  // Vlastnosti
-  'bezdratova':   ['bezdratov','wireless','wifi','bluetooth','bt'],
-  'bezdratovy':   ['bezdratov','wireless','wifi','bluetooth','bt'],
-  'bluetooth':    ['bluetooth','bt','bezdratov'],
-  'mechanicka':   ['mechanicka','mechanical'],
-  'herni':        ['herni','gaming','game'],
-  'gaming':       ['gaming','herni','game'],
-  'prenosny':     ['prenosny','portable','notebo'],
-  'kompaktni':    ['kompaktni','mini','small','maly'],
+  // === TELEFONY ===
+  'telefon':       ['telefon','mobil','smartphone','iphone','samsung','xiaomi','android'],
+  'mobil':         ['mobil','telefon','smartphone','iphone','samsung','xiaomi','android'],
+  'smartphone':    ['smartphone','telefon','mobil','iphone','android'],
+  'iphone':        ['iphone','apple'],
+  'samsung':       ['samsung','galaxy'],
+  'galaxy':        ['galaxy','samsung'],
+  'xiaomi':        ['xiaomi','redmi','poco'],
+  'redmi':         ['redmi','xiaomi'],
+  'poco':          ['poco','xiaomi'],
+  'android':       ['android','samsung','xiaomi','motorola','honor','realme','google'],
+  'motorola':      ['motorola','moto'],
+  'honor':         ['honor'],
+  'realme':        ['realme'],
+  'oneplus':       ['oneplus'],
+  'pixel':         ['pixel','google'],
+  // === NOTEBOOKY ===
+  'notebook':      ['notebook','laptop','ultrabook','macbook'],
+  'laptop':        ['laptop','notebook','ultrabook'],
+  'macbook':       ['macbook','apple'],
+  'ultrabook':     ['ultrabook','notebook','laptop'],
+  'chromebook':    ['chromebook','chrome'],
+  'lenovo':        ['lenovo','thinkpad','ideapad','legion'],
+  'thinkpad':      ['thinkpad','lenovo'],
+  'hp':            ['hp','hewlett'],
+  'dell':          ['dell','xps','inspiron','latitude'],
+  'asus':          ['asus','zenbook','vivobook','rog','tuf'],
+  'acer':          ['acer','aspire','nitro','swift'],
+  'msi':           ['msi'],
+  // === POČÍTAČE ===
+  'pocitac':       ['pocitac','pc','desktop','tower','mini pc'],
+  'desktop':       ['desktop','pocitac','pc','tower'],
+  'minipc':        ['mini pc','minipc','nuc'],
+  'allinone':      ['all-in-one','allinone','aio'],
+  // === MONITORY ===
+  'monitor':       ['monitor','display','obrazovka'],
+  'obrazovka':     ['monitor','display','obrazovka'],
+  // === KOMPONENTY ===
+  'grafika':       ['graficka','gpu','geforce','radeon','rtx','gtx','arc'],
+  'graficka':      ['graficka','gpu','geforce','radeon','rtx','gtx'],
+  'gpu':           ['gpu','graficka','geforce','radeon','rtx','gtx'],
+  'rtx':           ['rtx','geforce','nvidia'],
+  'gtx':           ['gtx','geforce','nvidia'],
+  'radeon':        ['radeon','amd','rx'],
+  'procesor':      ['procesor','cpu','ryzen','core','intel','amd'],
+  'cpu':           ['cpu','procesor','ryzen','intel','core'],
+  'ryzen':         ['ryzen','amd'],
+  'intel':         ['intel','core','celeron','pentium'],
+  'ram':           ['ram','ddr','dimm','sodimm','pameti'],
+  'pameti':        ['ram','ddr','pameti','dimm'],
+  'ddr':           ['ddr','ram','dimm'],
+  'ssd':           ['ssd','nvme','m.2'],
+  'nvme':          ['nvme','ssd','m.2'],
+  'hdd':           ['hdd','pevny disk','harddisk'],
+  'disk':          ['disk','ssd','hdd','nvme','uloziste'],
+  'zakladni':      ['zakladni deska','motherboard'],
+  'skrin':         ['skrin','case','tower','midi'],
+  'zdroj':         ['zdroj','psu','napajeni'],
+  'chlazeni':      ['chlazeni','chladic','ventilátor','fan','aio'],
+  // === PERIFERIE ===
+  'mys':           ['mys','mouse'],
+  'klavesnice':    ['klavesnice','keyboard'],
+  'sluchatka':     ['sluchatka','headset','headphones','airpods','pecky','sluchatko'],
+  'headset':       ['headset','sluchatka','headphones'],
+  'airpods':       ['airpods','sluchatka','apple','pecky'],
+  'mikrofon':      ['mikrofon','mic','microphone'],
+  'webkamera':     ['webkamera','webcam','kamera pc'],
+  'gamepad':       ['gamepad','ovladac','controller','joystick'],
+  'joystick':      ['joystick','gamepad','ovladac'],
+  'volant':        ['volant','steering wheel','simulator'],
+  // === KABELY A REDUKCE ===
+  'kabel':         ['kabel','cable'],
+  'hdmi':          ['hdmi'],
+  'displayport':   ['displayport','dp'],
+  'usb':           ['usb'],
+  'usbc':          ['usb-c','usb c','type-c','typec'],
+  'thunderbolt':   ['thunderbolt','tb4'],
+  'jack':          ['jack','3.5mm','audio kabel'],
+  'ethernet':      ['ethernet','lan','rj45','patch kabel'],
+  'opticky':       ['opticky','toslink','spdif'],
+  'redukce':       ['redukce','adapter','adaptér'],
+  'adapter':       ['adapter','adaptér','redukce'],
+  // === NABÍJECÍ ===
+  'nabijeni':      ['nabij','charger','nabijec','nabijecka'],
+  'nabijecka':     ['nabijecka','charger','nabij','adaptér'],
+  'powerbank':     ['powerbank','baterie prenosna','power bank'],
+  'bezdratove':    ['bezdratove nabijeni','qi','wireless charging'],
+  // === TABLETY ===
+  'tablet':        ['tablet','ipad','android tablet'],
+  'ipad':          ['ipad','apple','tablet'],
+  // === TISKÁRNY ===
+  'tiskarna':      ['tiskarna','printer','multifunkc','laserova','inkoustova'],
+  'toner':         ['toner','cartridge','napl','kazeta'],
+  'cartridge':     ['cartridge','toner','napl','inkoust'],
+  'papir':         ['papir','paper','a4'],
+  // === SÍŤ ===
+  'router':        ['router','wifi','wi-fi','smerovac'],
+  'wifi':          ['wifi','wi-fi','router','wireless','bezdrát'],
+  'switch':        ['switch','prepinac','hub'],
+  'access':        ['access point','ap','wifi'],
+  'mesh':          ['mesh','wifi system'],
+  'sfp':           ['sfp','optika','fiber'],
+  'patchpanel':    ['patch panel','patchpanel','datovy rozvaděč'],
+  // === ÚLOŽIŠTĚ ===
+  'flash':         ['flash','pendrive','usb disk','flashka'],
+  'pendrive':      ['pendrive','flash','usb disk'],
+  'nas':           ['nas','uloziste','network storage','synology','qnap'],
+  'synology':      ['synology','nas'],
+  'qnap':          ['qnap','nas'],
+  'sdkarta':       ['sd karta','sdcard','pamet karta','microsd'],
+  'cfkarta':       ['cf karta','cfexpress','compactflash'],
+  // === AUDIO-VIDEO ===
+  'reproduktor':   ['reproduktor','speaker','soundbar','repro'],
+  'soundbar':      ['soundbar','reproduktor','speaker','dolby'],
+  'subwoofer':     ['subwoofer','bas','reproduktor'],
+  'receiver':      ['receiver','av receiver','stereo receiver','zesilovac'],
+  'zesilovac':     ['zesilovac','amplifier','receiver','integrovaný'],
+  'gramofon':      ['gramofon','vinyl','turntable','lp'],
+  'televizor':     ['televizor','televize','tv','oled','qled','smart tv'],
+  'televize':      ['televize','televizor','tv','oled','qled'],
+  'projektor':     ['projektor','projector','beamer'],
+  'platno':        ['platno','projekcni platno','screen'],
+  'bluray':        ['blu-ray','bluray','prehravac'],
+  'dvd':           ['dvd','prehravac','disc'],
+  'mp3':           ['mp3','prehrávač','hudba','walkman'],
+  'diktafon':      ['diktafon','zaznamnik','voice recorder'],
+  'prekladac':     ['prekladac','prekladatel','hlasovy prekladac'],
+  'antena':        ['antena','dvb-t','dvbt','tv prijem','satelit'],
+  'satelit':       ['satelit','dvb-s','dvbs','dish'],
+  'settopbox':     ['set-top box','settopbox','dvb','t2'],
+  'dj':            ['dj','mixer','kontroler','mixazni'],
+  'mikrofon':      ['mikrofon','mic','microphone','studio'],
+  // === FOTOAPARÁTY A KAMERY ===
+  'fotoaparat':    ['fotoaparat','kamera','dslr','bezzrcadlovy','mirrorless','foto'],
+  'kamera':        ['kamera','fotoaparat','camera','videokamera','akční kamera'],
+  'akcnikamera':   ['akční kamera','gopro','action cam','sportovni kamera'],
+  'gopro':         ['gopro','akční kamera','action cam'],
+  'dron':          ['dron','drone','dji','quadcopter'],
+  'dji':           ['dji','dron','drone'],
+  'objektiv':      ['objektiv','lens','fotoobjektiv'],
+  'stativ':        ['stativ','tripod','monopod'],
+  'dalekohled':    ['dalekohled','binoculars','lupa','optika'],
+  // === GPS ===
+  'gps':           ['gps','navigace','garmin','tomtom'],
+  'navigace':      ['navigace','gps','garmin','tomtom','auto navigace'],
+  'garmin':        ['garmin','gps','sporttester'],
+  // === CHYTRÉ HODINKY ===
+  'hodinky':       ['hodinky','smartwatch','chytre hodinky','watch','garmin','fitbit'],
+  'smartwatch':    ['smartwatch','hodinky','chytre hodinky','apple watch'],
+  'fitness':       ['fitness naramek','fitness band','sport naramek','tracker'],
+  'applewatch':    ['apple watch','apple','hodinky'],
+  // === HRY A KONZOLE ===
+  'konzole':       ['konzole','playstation','xbox','nintendo','ps5','ps4','gaming'],
+  'playstation':   ['playstation','ps5','ps4','ps3','sony'],
+  'xbox':          ['xbox','microsoft','series x','series s'],
+  'nintendo':      ['nintendo','switch','zelda','mario'],
+  'ps5':           ['ps5','playstation 5','playstation'],
+  'hry':           ['hra','game','hry','gaming'],
+  'vr':            ['vr','virtual reality','oculus','quest','meta'],
+  // === SPOTŘEBIČE ===
+  'kafeovar':      ['kafeovar','kavovar','espresso','kafe','kava'],
+  'kavovar':       ['kavovar','kafeovar','espresso','kava','kafe'],
+  'mikrovlnka':    ['mikrovlnna','microwave','trouba'],
+  'trouba':        ['trouba','pec','mikrovlnna','vzduchova friteza'],
+  'friteza':       ['friteza','airfryer','vzduchova friteza','smažení'],
+  'robot':         ['kuchynsky robot','food processor','mixér','robot'],
+  'mixér':         ['mixer','blender','smoothie','robot'],
+  'vysavac':       ['vysavac','vacuum','roboticky vysavac','roomba'],
+  'roomba':        ['roomba','vysavac','robot','irobot'],
+  'zehllicka':     ['zehlicka','iron','parni stanice'],
+  'varna':         ['varna konvice','kettle','rychlovarna'],
+  'chladnička':    ['chladnicka','lednice','refrigerator'],
+  'mrazak':        ['mrazak','freezer','mrazicka'],
+  'pračka':        ['pracka','washing machine','automaticka pracka'],
+  'susicka':       ['susicka','dryer','kondenzacni'],
+  'mycka':         ['mycka','dishwasher','myčka nádobí'],
+  'klimatizace':   ['klimatizace','ac','air condition','chlazeni'],
+  'ventilátor':    ['ventilator','fan','ochlazovac','tower fan'],
+  'čistička':      ['cisticka vzduchu','air purifier','ionizátor'],
+  'zvlhcovac':     ['zvlhcovac','humidifier','aromaterapie'],
+  'odvlhcovac':    ['odvlhcovac','dehumidifier'],
+  'vafle':         ['vaflovic','sandwich','kontaktni gril','toaster'],
+  'toaster':       ['toaster','topinkovac','toustovac'],
+  'multivar':      ['multivar','hrnec','slow cooker','instantpot'],
+  // === DŮM A DÍLNA ===
+  'vrtacka':       ['vrtacka','drill','aku vrtacka','šroubovák'],
+  'sroubovak':     ['sroubovak','drill driver','aku sroubovák'],
+  'bruska':        ['bruska','sander','uhlovka','pilicka'],
+  'pila':          ['pila','saw','cirkularka','přímočará pila'],
+  'meric':         ['meric','multimetr','tester','merici pristroj'],
+  'multimetr':     ['multimetr','meric','tester','voltmetr'],
+  'zabezpeceni':   ['zabezpeceni','kamera','alarm','detektor'],
+  'ip kamera':     ['ip kamera','bezpecnostni kamera','cctv','nvr','dvr'],
+  'alarm':         ['alarm','zabezpeceni','pohybovy detektor'],
+  'zamek':         ['chytre zamky','smart lock','zámek'],
+  'svetlo':        ['led svetlo','zarovka','lampa','osvetleni'],
+  'led':           ['led','zarovka','svetlo','osvětlení','pásek'],
+  'baterka':       ['baterka','svitilna','flashlight','headlamp'],
+  'prodluzovak':   ['prodluzovak','listkova','zasuvka','extension'],
+  'ups':           ['ups','zaloha','bateriovka','nepretrzite napajeni'],
+  // === AUTO-MOTO ===
+  'auto':          ['auto','car','autokosmetika','automoto','vozidlo'],
+  'autokosmetika': ['autokosmetika','auto chemie','voskování','šampon auto'],
+  'carcharger':    ['nabijeni auto','car charger','do auta','autonabijec'],
+  'drzak':         ['drzak','holder','mount','stojan'],
+  'steras':        ['steras','wipers','stěrač'],
+  'dashcam':       ['dashcam','autokamera','kamera do auta'],
+  'obd':           ['obd','diagnostika','scanner'],
+  // === SPORT A KEMPING ===
+  'kolo':          ['kolo','bike','bicycle','elektrokolo','ebike'],
+  'kolobezka':     ['kolobezka','scooter','elektrokolobezka','e-scooter'],
+  'sporttester':   ['sporttester','hodinky sport','garmin','polar','suunto'],
+  'stan':          ['stan','tent','kempink','camping'],
+  'spaci':         ['spaci pytel','sleeping bag','deka'],
+  // === KANCELAR ===
+  'kalkulacka':    ['kalkulacka','calculator'],
+  'laminovacka':   ['laminovacka','laminator'],
+  'skartovac':     ['skartovac','shredder'],
+  'projektor':     ['projektor','beamer','plátno'],
+  // === SANITA ===
+  'elektrickyzubak': ['elektricky kartacek','sonic','oral-b','zuby'],
+  'holinky':       ['holinky','depilator','epilator','britva'],
+  'vaha':          ['vaha','osobni vaha','scale','BMI'],
+  'teplomer':      ['teplomer','thermometer','teplota','iri'],
+  'masaz':         ['masaz','massage','masazni pistole','percussor'],
+  // === CHOVATELSKE ===
+  'pes':           ['pes','dog','krmivo','vodítko','obojek'],
+  'kocka':         ['kocka','cat','krmivo kocka','pelech'],
+  'akvaristika':   ['akvaristika','ryby','akvarium','filtr'],
+  // === HRAČKY ===
+  'hracka':        ['hracka','toy','lego','stavebnice'],
+  'lego':          ['lego','stavebnice','duplo'],
+  'rc':            ['rc auto','rc model','radio ovladane'],
+  // === DOMÁCÍ POTŘEBY ===
+  'hrnec':         ['hrnec','pot','nadoba','tlakovy hrnec'],
+  'panev':         ['panev','pan','neprilnava','grilovaci panev'],
+  'nuz':           ['nuz','knife','kuchynsky nuz','sada nozu'],
+  'kuchynske':     ['kuchynske nacini','nastroje','varecka','strednik'],
+  // === ZAHRADA ===
+  'sekacka':       ['sekacka','lawn mower','robotická sekačka','husqvarna'],
+  'gril':          ['gril','bbq','grilovani','zahradni gril','weber'],
+  'zahradni':      ['zahradni','garden','plot','trávník'],
+  // === E-ČTEČKY ===
+  'ctecka':        ['ctecka knih','ebook','kindle','reader','e-ink'],
+  'kindle':        ['kindle','ctecka','amazon','ebook'],
+  // === ČTEČKY KARET / POKLADNY ===
+  'pokladna':      ['pokladna','pos','pokladni system','registracni'],
+  'ctecka':        ['ctecka karet','reader','pos terminal'],
+  // === SOFTWARE / CLOUD ===
+  'antivirus':     ['antivirus','security','internet security','eset','avast'],
+  'office':        ['office','microsoft','kancelarsky software','word','excel'],
+  'windows':       ['windows','microsoft','os','operacni system'],
+  // === OBECNÉ VLASTNOSTI ===
+  'bezdratovy':    ['bezdratov','wireless','wifi','bluetooth','bt'],
+  'bezdratova':    ['bezdratov','wireless','wifi','bluetooth','bt'],
+  'bluetooth':     ['bluetooth','bt','bezdratov'],
+  'mechanicka':    ['mechanicka','mechanical'],
+  'herni':         ['herni','gaming','game','pro gamery'],
+  'gaming':        ['gaming','herni','game'],
+  'prenosny':      ['prenosny','portable','notebo'],
+  'kompaktni':     ['kompaktni','mini','small'],
+  'profesionalni': ['profesionalni','pro','professional'],
+  // === BARVY ===
+  'cerna':         ['cerna','black'],
+  'bila':          ['bila','white'],
+  'modra':         ['modra','blue'],
+  'cervena':       ['cervena','red'],
+  'zelena':        ['zelena','green'],
+  'stribrna':      ['stribrna','silver'],
+  'zlata':         ['zlata','gold'],
+  'fialova':       ['fialova','purple','violet'],
+  'ruzova':        ['ruzova','pink'],
+  'seda':          ['seda','grey','gray'],
+  'titanová':      ['titanova','titanium'],
 };
 
 // Rozšíření tokenů o synonyma
@@ -399,92 +575,264 @@ function paramsToStr(params) {
   return parts.length > 0 ? ' [' + parts.join(', ') + ']' : '';
 }
 
-// Kategoriova pravidla - zachovana jako fallback pro edge cases
+// Kategoriová pravidla - pre-filtr poolu pro jednoznačné dotazy
+// Pořadí je důležité - specifičtější pravidla MUSÍ být před obecnými
 const CAT_RULES = [
-  // Kabely a redukce - MUSÍ být před notebooky/telefony, jinak "kabel pro notebook" matchne notebook
-  { words: ['kabel','redukce','adaptér kabel','hdmi kabel','displayport kabel','usb kabel','usb-c kabel','usb c kabel','nabíjecí kabel','prodlužovací kabel','audio kabel','jack kabel','optický kabel'],
-    must: ['Příslušenství | Kabely a redukce', 'Kabely a konektory', 'Kabely | '] },
-  // Telefony - MUSÍ být před monitory, jinak "iphone s velkým displejem" matchne Monitory
-  { words: ['smartphone','chytrý telefon','android telefon','iphone','samsung galaxy','xiaomi','motorola','google pixel','oneplus','honor','realme','vivo','poco'],
-    must: ['Telefony | Mobilní telefony | Apple', 'Telefony | Mobilní telefony | Samsung', 'Telefony | Mobilní telefony | Xiaomi', 'Telefony | Mobilní telefony | Motorola', 'Telefony | Mobilní telefony | Google', 'Telefony | Mobilní telefony | OnePlus', 'Telefony | Mobilní telefony | HONOR', 'Telefony | Mobilní telefony | Realme', 'Telefony | Mobilní telefony | POCO', 'Telefony | Mobilní telefony | VIVO', 'Telefony | Mobilní telefony | ZTE'] },
-  // Obecně mobilní telefon
+  // === KABELY - před notebooky/telefony ===
+  { words: ['kabel','hdmi kabel','displayport kabel','usb kabel','usb-c kabel','nabíjecí kabel','prodlužovací kabel','audio kabel','ethernet kabel','optický kabel','patch kabel'],
+    must: ['Příslušenství | Kabely'] },
+  { words: ['redukce','adaptér kabel'],
+    must: ['Příslušenství | Redukce','Příslušenství | Kabely'] },
+
+  // === TELEFONY - před monitory (kvůli "displej") ===
+  { words: ['iphone','samsung galaxy','xiaomi','motorola','google pixel','oneplus','honor','realme','vivo','poco','zte'],
+    must: ['Telefony | Mobilní telefony'] },
+  { words: ['smartphone','chytrý telefon','android telefon'],
+    must: ['Telefony | Mobilní telefony'] },
   { words: ['telefon','mobil','mobilní telefon'],
     must: ['Telefony | Mobilní telefony'] },
-  // Notebooky - kategorie "Notebooky | ..."
-  { words: ['notebook','laptop','ultrabook','macbook','přenosný počítač'],
+  { words: ['tlačítkový telefon','seniorský telefon'],
+    must: ['Telefony | Tlačítkové telefony','Telefony | Pro seniory'] },
+
+  // === NOTEBOOKY ===
+  { words: ['notebook','laptop','ultrabook','macbook','chromebook','přenosný počítač'],
     must: ['Notebooky | '] },
-  // Monitory - 'displej' a 'obrazovka' odebrány - konflikty s telefony/notebooky
-  { words: ['monitor','lcd','oled monitor','herní monitor'],
+
+  // === POČÍTAČE ===
+  { words: ['desktop','stolní počítač','mini pc','all-in-one','nuc','počítač'],
+    must: ['Počítače | '] },
+
+  // === MONITORY ===
+  { words: ['monitor','herní monitor','oled monitor','4k monitor'],
     must: ['Monitory | '] },
-  // Grafické karty
-  { words: ['grafická karta','grafiku','gpu','rtx','gtx','radeon','geforce','grafická'],
+
+  // === KOMPONENTY ===
+  { words: ['grafická karta','gpu','rtx','gtx','radeon','geforce'],
     must: ['Komponenty | Grafické karty'] },
-  // Procesory
   { words: ['procesor','cpu','ryzen','core i5','core i7','core i9','intel core'],
     must: ['Komponenty | Procesory'] },
-  // RAM paměti
   { words: ['ram','paměť ram','dimm','ddr4','ddr5','sodimm'],
     must: ['Komponenty | Paměti RAM'] },
-  // SSD a disky
-  { words: ['ssd','nvme','m.2','pevný disk','hdd','harddisk'],
-    must: ['Komponenty | SSD', 'Komponenty | HDD'] },
-  // Flash disky
+  { words: ['ssd','nvme','m.2 disk'],
+    must: ['Komponenty | SSD'] },
+  { words: ['hdd','pevný disk','harddisk'],
+    must: ['Komponenty | HDD'] },
+  { words: ['základní deska','motherboard'],
+    must: ['Komponenty | Základní desky'] },
+  { words: ['počítačová skříň','pc skříň','midi tower'],
+    must: ['Komponenty | Skříně'] },
+  { words: ['počítačový zdroj','pc zdroj','psu napájení'],
+    must: ['Komponenty | Zdroje'] },
+  { words: ['chlazení procesoru','cpu chladic','vodní chlazení'],
+    must: ['Komponenty | Chlazení'] },
   { words: ['flash disk','usb disk','pendrive'],
     must: ['Komponenty | Flash disky'] },
-  // NAS
   { words: ['nas','síťové úložiště','network storage'],
     must: ['Komponenty | Datová úložiště NAS'] },
-  // Tiskárny - kategorie "Tiskárny a multifunkce | ..."
-  { words: ['tiskárna','laserová tiskárna','inkoustová tiskárna','multifunkční tiskárna','3d tiskárna'],
-    must: ['Tiskárny a multifunkce | '] },
-  // Spotřební materiál (tonery, cartridge)
-  { words: ['toner','cartridge','náplň do tiskárny','inkoustová náplň','kazeta do tiskárny'],
-    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
-  // Routery a WiFi
-  { words: ['router','wifi router','wi-fi router','mesh','access point'],
-    must: ['Sítě | Routery', 'Sítě | Access Pointy', 'Sítě | MikroTik'] },
-  // Switche
-  { words: ['switch','síťový přepínač'],
-    must: ['Sítě | Switche', 'Sítě | Cisco Small Business'] },
-  // Klávesnice
-  { words: ['klávesnice','keyboard','mechanická klávesnice'],
-    must: ['Klávesnice | '] },
-  // Myši
-  { words: ['myš','myši','herní myš','bezdrátová myš'],
+  { words: ['sd karta','microsd','paměťová karta'],
+    must: ['Komponenty | Paměťové karty'] },
+
+  // === PERIFERIE ===
+  { words: ['myš','herní myš','bezdrátová myš','optická myš'],
     must: ['Myši | '] },
-  // Sluchátka
-  { words: ['sluchátka','headset','bezdrátová sluchátka','airpods'],
-    must: ['Sluchátka | '] },
-  // Tablety
+  { words: ['klávesnice','herní klávesnice','mechanická klávesnice'],
+    must: ['Klávesnice | '] },
+  { words: ['sluchátka','bezdrátová sluchátka','herní headset','airpods'],
+    must: ['Sluchátka | ','Audio-Video | Sluchátka'] },
+  { words: ['webkamera','webcam'],
+    must: ['Příslušenství | Webkamery','Kamery | Webkamery'] },
+  { words: ['gamepad','herní ovladač','joystick','volant'],
+    must: ['Hry a herní zařízení | Příslušenství'] },
+  { words: ['mikrofon','studiový mikrofon'],
+    must: ['Audio-Video | Mikrofony'] },
+
+  // === TABLETY ===
   { words: ['tablet','ipad','android tablet'],
     must: ['Tablety | '] },
-  // Telefony - CHYTRÉ telefony (ne tlačítkové)
-  { words: ['smartphone','chytrý telefon','android telefon','iphone','samsung galaxy','xiaomi','motorola','google pixel','oneplus','honor','realme','vivo','poco'],
-    must: ['Telefony | Mobilní telefony | Apple', 'Telefony | Mobilní telefony | Samsung', 'Telefony | Mobilní telefony | Xiaomi', 'Telefony | Mobilní telefony | Motorola', 'Telefony | Mobilní telefony | Google', 'Telefony | Mobilní telefony | OnePlus', 'Telefony | Mobilní telefony | HONOR', 'Telefony | Mobilní telefony | Realme', 'Telefony | Mobilní telefony | POCO', 'Telefony | Mobilní telefony | VIVO', 'Telefony | Mobilní telefony | ZTE'] },
-  // Obecně mobilní telefon
-  { words: ['telefon','mobil','mobilní telefon'],
-    must: ['Telefony | Mobilní telefony'] },
-  // Herní konzole
-  { words: ['playstation','xbox','nintendo','ps5','ps4','konzole'],
-    must: ['Herní konzole', 'Konzole | '] },
-  // Projektory
-  { words: ['projektor'],
-    must: ['Projektory | '] },
-  // Televize
-  { words: ['televize','televizor','smart tv','oled tv'],
+
+  // === TISKÁRNY ===
+  { words: ['tiskárna','laserová tiskárna','inkoustová tiskárna','multifunkční tiskárna','3d tiskárna'],
+    must: ['Tiskárny a multifunkce | '] },
+  { words: ['toner','cartridge','náplň do tiskárny','inkoustová náplň'],
+    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
+  { words: ['kancelářský papír','papír a4'],
+    must: ['Spotřební materiál | Papír'] },
+
+  // === SKENERY ===
+  { words: ['skener','scanner','dokumentový skener'],
+    must: ['Skenery | '] },
+
+  // === SÍŤ ===
+  { words: ['router','wifi router','wi-fi router'],
+    must: ['Sítě | Routery'] },
+  { words: ['mesh wifi','wifi systém'],
+    must: ['Sítě | Mesh WiFi','Sítě | Routery'] },
+  { words: ['switch','síťový přepínač','network switch'],
+    must: ['Sítě | Switche','Sítě | Cisco Small Business'] },
+  { words: ['access point','přístupový bod'],
+    must: ['Sítě | Access Pointy'] },
+  { words: ['powerline','dlan'],
+    must: ['Sítě | Powerline'] },
+
+  // === SERVERY ===
+  { words: ['server','rack','blade server','nas server'],
+    must: ['Servery, Racky a platformy | '] },
+  { words: ['ups','záložní zdroj'],
+    must: ['Dům a dílna | UPS záložní zdroje','Komponenty | Záložní zdroje'] },
+
+  // === AUDIO-VIDEO ===
+  { words: ['reproduktor','bluetooth reproduktor','přenosný reproduktor'],
+    must: ['Audio-Video | Reproduktory'] },
+  { words: ['soundbar','dolby atmos'],
+    must: ['Audio-Video | Reproduktory | Soundbary'] },
+  { words: ['receiver','av receiver','stereo receiver','zesilovač'],
+    must: ['Audio-Video | Receivery','Audio-Video | Převodníky / Zesilovače'] },
+  { words: ['gramofon','vinyl','turntable'],
+    must: ['Audio-Video | Gramofony'] },
+  { words: ['televize','televizor','smart tv','oled tv','qled'],
     must: ['Televize | '] },
-  // Fotoaparáty
-  { words: ['fotoaparát','zrcadlovka','dslr','bezzrcadlovka'],
-    must: ['Fotoaparáty | '] },
-  // Kabely HDMI, USB
-  { words: ['hdmi kabel','displayport kabel','usb kabel'],
-    must: ['Příslušenství | Kabely a redukce'] },
-  // Reproduktory, soundbary
-  { words: ['reproduktor','soundbar','bluetooth reproduktor'],
-    must: ['Reproduktory | ', 'Soundbary | ', 'Audio-Video | Reproduktory'] },
-  // Zahrada
-  { words: ['gril','sekačka','zahradní'],
-    must: ['Zahrada | '] },
+  { words: ['blu-ray','bluray přehrávač'],
+    must: ['Audio-Video | Blu-ray přehrávače'] },
+  { words: ['dvd přehrávač'],
+    must: ['Audio-Video | DVD přehrávače'] },
+  { words: ['mp3 přehrávač'],
+    must: ['Audio-Video | MP3 přehrávače'] },
+  { words: ['diktafon','záznamník','hlasový záznamník'],
+    must: ['Audio-Video | Záznamníky'] },
+  { words: ['dvb-t','dvbt','set-top box','anténa'],
+    must: ['Audio-Video | TV příjem'] },
+  { words: ['satelit','dvb-s','satelitní'],
+    must: ['Satelitní technika | ','Audio-Video | TV příjem'] },
+
+  // === PROJEKTORY ===
+  { words: ['projektor','beamer','laserový projektor'],
+    must: ['Projektory | '] },
+
+  // === FOTOAPARÁTY A KAMERY ===
+  { words: ['fotoaparát','zrcadlovka','dslr','bezzrcadlový'],
+    must: ['Fotoaparáty a optika | Fotoaparáty'] },
+  { words: ['objektiv','fotoobjektiv'],
+    must: ['Fotoaparáty a optika | Objektivy'] },
+  { words: ['akční kamera','gopro','sportovní kamera'],
+    must: ['Kamery | Akční kamery'] },
+  { words: ['dron','drone','dji'],
+    must: ['Kamery | Drony','Fotoaparáty a optika | Drony'] },
+  { words: ['videokamera','camcorder'],
+    must: ['Kamery | Videokamery'] },
+  { words: ['ip kamera','bezpečnostní kamera','cctv'],
+    must: ['Kamery | IP kamery'] },
+  { words: ['dalekohled','binokulár','lupa'],
+    must: ['Fotoaparáty a optika | Dalekohledy a optika'] },
+
+  // === GPS ===
+  { words: ['gps navigace','garmin','navigace do auta'],
+    must: ['GPS navigace | '] },
+  { words: ['sporttester','sportovní hodinky','garmin sporttester'],
+    must: ['GPS navigace | Sportovní GPS','Chytré hodinky a SMART | '] },
+
+  // === CHYTRÉ HODINKY ===
+  { words: ['chytré hodinky','smartwatch','apple watch'],
+    must: ['Chytré hodinky a SMART | Chytré hodinky'] },
+  { words: ['fitness náramek','fitness band'],
+    must: ['Chytré hodinky a SMART | Fitness náramky'] },
+
+  // === HERNÍ KONZOLE ===
+  { words: ['playstation','ps5','ps4','xbox','nintendo','herní konzole'],
+    must: ['Hry a herní zařízení | Konzole','Hry a herní zařízení | '] },
+  { words: ['vr headset','virtual reality','oculus','meta quest'],
+    must: ['Hry a herní zařízení | VR'] },
+
+  // === SPOTŘEBIČE ===
+  { words: ['kávovar','kaféovar','espresso','nespresso'],
+    must: ['Spotřebiče do domácnosti | Kávovary'] },
+  { words: ['mikrovlnná','mikrovlnka'],
+    must: ['Spotřebiče do domácnosti | Mikrovlnné trouby'] },
+  { words: ['airfryer','vzduchová fritéza','horkovzdušná trouba'],
+    must: ['Spotřebiče do domácnosti | Fritézy','Spotřebiče do domácnosti | Trouby'] },
+  { words: ['robot kuchyňský','food processor'],
+    must: ['Spotřebiče do domácnosti | Kuchyňské roboty'] },
+  { words: ['mixér','blender','tyčový mixér'],
+    must: ['Spotřebiče do domácnosti | Mixéry'] },
+  { words: ['vysavač','robotický vysavač','roomba'],
+    must: ['Spotřebiče do domácnosti | Vysavače'] },
+  { words: ['žehlička','parní stanice','žehlení'],
+    must: ['Spotřebiče do domácnosti | Žehličky'] },
+  { words: ['varna konvice','rychlovarná konvice'],
+    must: ['Spotřebiče do domácnosti | Vařiče a konvice'] },
+  { words: ['klimatizace','split klimatizace'],
+    must: ['Spotřebiče do domácnosti | Klimatizace'] },
+  { words: ['ventilátor','ochlazovač vzduchu','stojanový ventilátor'],
+    must: ['Spotřebiče do domácnosti | Ventilátory'] },
+  { words: ['čistička vzduchu','air purifier'],
+    must: ['Spotřebiče do domácnosti | Čističky vzduchu'] },
+  { words: ['zvlhčovač','humidifier'],
+    must: ['Spotřebiče do domácnosti | Zvlhčovače'] },
+
+  // === DŮM A DÍLNA ===
+  { words: ['vrtačka','aku vrtačka','šroubovák'],
+    must: ['Dům a dílna | Vrtačky','Dům a dílna | Šroubováky'] },
+  { words: ['úhlová bruska','přímočará pila','okružní pila'],
+    must: ['Dům a dílna | Brusky a pily'] },
+  { words: ['multimetr','měřicí přístroj','tester'],
+    must: ['Dům a dílna | Měřicí přístroje'] },
+  { words: ['chytrý zámek','smart lock'],
+    must: ['Dům a dílna | Bezpečnost'] },
+  { words: ['led žárovka','chytrá žárovka','led pásek','smart osvětlení'],
+    must: ['Dům a dílna | Osvětlení'] },
+  { words: ['prodlužovací kabel','přepěťová ochrana','lišta zásuvek'],
+    must: ['Dům a dílna | Prodlužovací kabely','Příslušenství | Napájení'] },
+
+  // === AUTO-MOTO ===
+  { words: ['autokosmetika','autošampon','vosk na auto'],
+    must: ['Auto-moto | Autokosmetika'] },
+  { words: ['držák telefonu do auta','nabíječka do auta'],
+    must: ['Auto-moto | Elektrické doplňky','Auto-moto | Interiér vozidla'] },
+  { words: ['dashcam','kamera do auta','autokamera'],
+    must: ['Auto-moto | Elektrické doplňky','Kamery | '] },
+  { words: ['střešní box','nosič kol','příčníky'],
+    must: ['Auto-moto | Střešní boxy a nosiče'] },
+
+  // === SPORT A KEMPING ===
+  { words: ['elektrokolo','e-bike','kolo'],
+    must: ['Sport a kemping | Elektrokola','Sport a kemping | Kola'] },
+  { words: ['elektrokoloběžka','e-scooter'],
+    must: ['Sport a kemping | Elektrokoloběžky'] },
+  { words: ['stan','spacák','karimatka'],
+    must: ['Sport a kemping | Kempink'] },
+
+  // === KANCELÁŘ ===
+  { words: ['kalkulačka','stolní kalkulačka'],
+    must: ['Kancelář a papírnictví | Kalkulačky'] },
+  { words: ['laminovačka','laminovač'],
+    must: ['Kancelář a papírnictví | Laminovačky'] },
+  { words: ['skartovačka','skartovač'],
+    must: ['Kancelář a papírnictví | Skartovačky'] },
+
+  // === ZAHRADA ===
+  { words: ['sekačka na trávu','robotická sekačka','travní sekačka'],
+    must: ['Zahrada | Zahradní technika | Sekačky'] },
+  { words: ['gril','bbq','zahradní gril','smoker','udírna'],
+    must: ['Zahrada | Krby, grily a udírny'] },
+  { words: ['zahradní nářadí','lopata','hrábě','rýč'],
+    must: ['Zahrada | Zahradní nářadí'] },
+  { words: ['závlaha','zahradní hadice','postřikovač'],
+    must: ['Zahrada | Zavlažování'] },
+
+  // === E-ČTEČKY ===
+  { words: ['čtečka knih','ebook čtečka','kindle','e-ink'],
+    must: ['Čtečky e-knih | '] },
+
+  // === SOFTWARE ===
+  { words: ['antivirus','internet security','eset','avast','kaspersky'],
+    must: ['Software | Bezpečnostní software'] },
+  { words: ['microsoft office','office 365','kancelářský software'],
+    must: ['Software | Kancelářský software'] },
+  { words: ['windows 11','operační systém'],
+    must: ['Software | Operační systémy'] },
+
+  // === POKLADNÍ SYSTÉMY ===
+  { words: ['pokladna','pos systém','registrační pokladna','eet'],
+    must: ['Pokladní a evidenční systémy | '] },
 ];
 
 // Vyhledávání - pseudo-vektorový engine
@@ -496,16 +844,20 @@ function search(query, max) {
   // Tokenizace a rozšíření synonymy
   const originalTokens = tokenize(q);
   if (originalTokens.length === 0) return [];
-  const expandedTokens = expandTokens(originalTokens);
 
-  // Přesná fráze pro bonus (první 3 tokeny spojené)
-  const phraseNorm = originalTokens.slice(0, 3).join(' ');
-
-  // Budget parsing
+  // Budget parsing - zachytit "10 000 Kč", "10000 Kč", "10 tisíc", ale i pouhé "do 20000" nebo "20000"
   const bmRaw = query.match(/(\d[\d\s]{0,8})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?|k\b)/i);
+  const bmPlain = query.match(/\bdo\s+(\d{4,6})\b/i); // "do 20000" bez jednotky
   const budget = bmRaw
     ? parseFloat(bmRaw[1].replace(/\s/g,'')) * (/tis|k\b/i.test(bmRaw[2]) && !/kc|kč/i.test(bmRaw[2]) ? 1000 : 1)
-    : null;
+    : bmPlain ? parseFloat(bmPlain[1]) : null;
+
+  // Odfiltrovat čistá čísla z tokenů - "20000" není klíčové slovo produktu
+  const filteredTokens = originalTokens.filter(t => !/^\d+$/.test(t));
+  const expandedTokens = expandTokens(filteredTokens.length > 0 ? filteredTokens : originalTokens);
+
+  // Přesná fráze pro bonus (první 3 tokeny spojené)
+  const phraseNorm = filteredTokens.slice(0, 3).join(' ');
 
   // Filtr displeje
   let minDisplej = null, maxDisplej = null;
@@ -548,7 +900,7 @@ function search(query, max) {
 
   // Skórování všech produktů v poolu
   const scored = pool
-    .map(p => ({ p, score: scoreProduct(p, expandedTokens, originalTokens, phraseNorm) }))
+    .map(p => ({ p, score: scoreProduct(p, expandedTokens, filteredTokens, phraseNorm) }))
     .filter(x => x.score > 0)
     .sort((a, b) => b.score !== a.score ? b.score - a.score : a.p.cena - b.p.cena)
     .slice(0, max);
