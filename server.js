@@ -998,6 +998,20 @@ app.post('/chat', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/debug-feed', (req, res) => {
+  const topKats = [...new Set(products.map(p => (p.kategorie||'').split(' | ')[0].trim()))].sort();
+  const sample = products.slice(0, 5).map(p => ({ nazev: p.nazev, kategorie: p.kategorie, cena: p.cena }));
+  const q = req.query.q;
+  let searchResult = [];
+  if (q) {
+    searchResult = products
+      .filter(p => p.nazev.toLowerCase().includes(q.toLowerCase()) || (p.kategorie||'').toLowerCase().includes(q.toLowerCase()))
+      .slice(0, 5)
+      .map(p => ({ nazev: p.nazev, kategorie: p.kategorie, cena: p.cena }));
+  }
+  res.json({ celkem_produktu: products.length, top_kategorie: topKats, prvnich_5: sample, hledano: q||null, nalezeno: searchResult });
+});
+
 app.get('/debug-phones', (req, res) => {
   const q = req.query.q || 'Samsung';
   const phones = products.filter(p => p.kategorie && p.kategorie.includes('Telefony | Mobiln'));
