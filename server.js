@@ -91,19 +91,28 @@ function loadFromParts() {
     const f = path.join(__dirname, 'feed_part' + i + '.xml');
     if (fs.existsSync(f)) parts.push(f);
   }
+  console.log('Hledam feed_part soubory, nalezeno: ' + parts.length);
   if (parts.length > 0) {
     console.log('Nacitam ' + parts.length + ' casti feedu...');
     try {
-      let allItems = [];
-      let header = '';
+      // Jednoduse spojit XML - odstrihnout </SHOP> z konce kazde casti krome posledni
+      // a <SHOP> ze zacatku kazde casti krome prvni
+      let combined = '';
       for (let i = 0; i < parts.length; i++) {
-        const xml = fs.readFileSync(parts[i], 'utf-8');
-        if (i === 0) { const fi = xml.indexOf('<SHOPITEM>'); header = xml.substring(0, fi); }
-        const m = xml.match(/<SHOPITEM>[\s\S]*?<\/SHOPITEM>/g) || [];
-        allItems = allItems.concat(m);
+        let xml = fs.readFileSync(parts[i], 'utf-8').trim();
+        if (i > 0) {
+          // Odrizni vse pred prvnim <SHOPITEM>
+          const firstItem = xml.indexOf('<SHOPITEM>');
+          if (firstItem > 0) xml = xml.substring(firstItem);
+        }
+        if (i < parts.length - 1) {
+          // Odrizni </SHOP> z konce
+          const lastShop = xml.lastIndexOf('</SHOP>');
+          if (lastShop > 0) xml = xml.substring(0, lastShop);
+        }
+        combined += xml;
+        console.log('Cast ' + (i+1) + ' nactena, velikost: ' + Math.round(xml.length/1024) + 'KB');
       }
-      const combined = header + allItems.join('') + '</SHOP>';
-      console.log('Spojeno ' + allItems.length + ' polozek');
       loadProductsFromXml(combined);
     } catch(e) { console.error('Chyba spojovani:', e.message); loadFromFile(); }
   } else { loadFromFile(); }
