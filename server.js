@@ -271,8 +271,8 @@ function buildPrompt(found) {
   const pobocky = CONFIG.POBOCKY.map(p => '- ' + p.nazev + ': ' + p.adresa).join('\n');
   const katalog = found.length > 0
     ? '\n\nPRODUKTY Z KATALOGU:\n' + found.map(p =>
-        '- ' + p.nazev + ' | ' + p.cena + ' | ' + p.dostupnost + (p.url ? ' | ' + p.url : '') +
-        (p.popis ? ' | ' + p.popis.substring(0, 150) : '')
+        '[' + i + '] ' + p.nazev + ' | ' + p.cena + ' | ' + p.dostupnost +
+        (p.popis ? ' | ' + p.popis.substring(0, 100) : '')
       ).join('\n')
     : '\n\n(Produkt nenalezen v katalogu - nasmer na mironet.cz nebo 777 900 777)';
 
@@ -313,15 +313,16 @@ app.post('/chat', requireAuth, async (req, res) => {
   const history = [...messages, { role: 'user', content: userMessage }];
 
   try {
-    const reply = await callClaude(history, buildPrompt(found));
-    // Zobrazit pouze produkty ktere Claude zminil v textu odpovedi
-    const replyLower = reply.toLowerCase();
-    const mentioned = found.filter(p => {
-      const words = p.nazev.toLowerCase().split('/')[0].trim().split(' ').filter(w => w.length > 3);
-      const matches = words.slice(0, 5).filter(w => replyLower.includes(w)).length;
-      return matches >= 2;
-    });
-    const toShow = mentioned.length >= 1 ? mentioned.slice(0, 5) : found.slice(0, 3);
+    const rawReply = await callClaude(history, buildPrompt(found));
+    // Parsovat indexy produktu z odpovedi (format: INDEXY:[0,2,4])
+    const indexMatch = rawReply.match(/INDEXY:\s*\[([\d,\s]+)\]/);
+    const reply = rawReply.replace(/\nINDEXY:\s*\[[\d,\s]+\]/, '').trim();
+    let toShow;
+    if (indexMatch) {
+      const idxs = indexMatch[1].split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n < found.length);
+      toShow = idxs.map(i => found[i]).filter(Boolean).slice(0, 5);
+    }
+    if (!toShow || toShow.length === 0) toShow = found.slice(0, 3);
     res.json({ reply, foundProducts: toShow });
   } catch(e) {
     console.error('Claude error:', e.message);
