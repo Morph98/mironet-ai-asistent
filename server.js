@@ -234,7 +234,12 @@ function search(query, max) {
 
   let pool = products;
   if (catFilter.length > 0) {
-    const cf = products.filter(p => catFilter.some(f => (p.kategorie + ' ' + p.nazev).toLowerCase().includes(f.toLowerCase())));
+    let cf = products.filter(p => catFilter.some(f => (p.kategorie + ' ' + p.nazev).toLowerCase().includes(f.toLowerCase())));
+    // Pokud hledáme telefon obecně, vyloučit tlačítkové a seniory pokud jsou i smartphony
+    if (catFilter.some(f => f.includes('Telefony | Mobiln'))) {
+      const smartphony = cf.filter(p => !p.kategorie.includes('Tlačítkové') && !p.kategorie.includes('Pro seniory') && !p.kategorie.includes('Ostatní telefony'));
+      if (smartphony.length >= 3) cf = smartphony;
+    }
     if (cf.length >= 3) pool = cf;
   }
   if (budget && budget > 500) {
