@@ -192,7 +192,7 @@ const CAT_RULES = [
   { words: ['sluchatka bezdrátová','true wireless','airpods'], must: ['Sluchátka | Bezdrátová'] },
 ];
 
-/ ============================================================
+// ============================================================
 // MIRONET AI ASISTENT — Render.com verze s IT feedem
 // ============================================================
 const express = require('express');
