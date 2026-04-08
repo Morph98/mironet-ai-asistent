@@ -1,5 +1,4 @@
 const express = require('express');
-const xml2js  = require('xml2js');
 const cors    = require('cors');
 const fs      = require('fs');
 const path    = require('path');
@@ -13,22 +12,22 @@ app.use(cors());
 
 const CONFIG = {
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
-  FEED_URL:  process.env.FEED_URL  || '',
-  FEED_FILE: path.join(__dirname, 'feed.xml'),
+  FEED_URL: process.env.FEED_URL || '',
   PORT: process.env.PORT || 3001,
   MODEL: 'claude-sonnet-4-6',
   ACCESS_PASSWORD: process.env.ACCESS_PASSWORD || 'Mironet2026+',
   POBOCKY: [
-    { nazev: 'Praha 4 — Na Strzi',     adresa: 'Na Strzi 1702/65, 140 00 Praha 4' },
-    { nazev: 'Praha 8 — Karlin',        adresa: 'Thamova 289/13, 186 00 Praha 8'  },
-    { nazev: 'Kladno',                  adresa: 'Cs. armady 1578, 272 01 Kladno'  },
-    { nazev: 'Plzen',                   adresa: 'Borska 3, 301 00 Plzen'           },
-    { nazev: 'Brno',                    adresa: 'Prazakova 1008/69, 639 00 Brno'   },
-    { nazev: 'Jablonec nad Nisou',      adresa: 'Liberecka 102/11, 466 01 Jablonec'},
-    { nazev: 'Nupaky (vydejni sklad)',  adresa: 'Nupaky 48, 251 01 Ricany'         },
+    { nazev: 'Praha 4', adresa: 'Na Strzi 1702/65, 140 00 Praha 4' },
+    { nazev: 'Praha 8 - Karlin', adresa: 'Thamova 289/13, 186 00 Praha 8' },
+    { nazev: 'Kladno', adresa: 'Cs. armady 1578, 272 01 Kladno' },
+    { nazev: 'Plzen', adresa: 'Borska 3, 301 00 Plzen' },
+    { nazev: 'Brno', adresa: 'Prazakova 1008/69, 639 00 Brno' },
+    { nazev: 'Jablonec nad Nisou', adresa: 'Liberecka 102/11, 466 01 Jablonec' },
+    { nazev: 'Nupaky (vydejni sklad)', adresa: 'Nupaky 48, 251 01 Ricany' },
   ]
 };
 
+// Session tokeny
 const sessions = new Set();
 function generateToken() { return crypto.randomBytes(32).toString('hex'); }
 function requireAuth(req, res, next) {
@@ -49,64 +48,22 @@ app.post('/login', (req, res) => {
   }
 });
 
+// Produkty
 let products = [];
 
-function loadProductsFromXml(xml) {
-  // Parsovat efektivne - bez ukladani celeho stromu
-  const result = [];
-  const itemRegex = /<SHOPITEM>([\s\S]*?)<\/SHOPITEM>/g;
-  let match;
-  const getTag = (str, tag) => {
-    const m = str.match(new RegExp('<' + tag + '>([\s\S]*?)<\/' + tag + '>'));
-    return m ? m[1].trim() : '';
-  };
-  while ((match = itemRegex.exec(xml)) !== null) {
-    const item = match[1];
-    const nazev = getTag(item, 'PRODUCTNAME');
-    if (!nazev) continue;
-    result.push({
-      nazev,
-      cena:       parseFloat(getTag(item, 'PRICE_VAT') || getTag(item, 'PRICE') || '0'),
-      url:        getTag(item, 'URL'),
-      dostupnost: getTag(item, 'AVAIL') || '0',
-      kategorie:  getTag(item, 'CATEGORYTEXT'),
-      vyrobce:    getTag(item, 'MANUFACTURER'),
-      popis:      getTag(item, 'DESCRIPTION').substring(0, 200),
-      imgurl:     getTag(item, 'IMAGE_LINK'),
-    });
+function getVal(str, tag) {
+  const s = str.indexOf('<' + tag + '>');
+  const e = str.indexOf('</' + tag + '>');
+  if (s < 0 || e < 0) return '';
+  let val = str.substring(s + tag.length + 2, e).trim();
+  if (val.startsWith('<![CDATA[') && val.endsWith(']]>')) {
+    val = val.substring(9, val.length - 3);
   }
-  products = result;
-  console.log('Nacteno ' + products.length + ' produktu');
-  // Uvolnit pamet
-  xml = null;
-  if (global.gc) global.gc();
+  return val;
 }
 
-function loadProducts() {
-  if (CONFIG.FEED_URL) {
-    console.log('Nacitam feed z URL:', CONFIG.FEED_URL);
-    const proto = CONFIG.FEED_URL.startsWith('https') ? https : http;
-    proto.get(CONFIG.FEED_URL, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => loadProductsFromXml(data));
-    }).on('error', err => { console.error('Chyba feedu:', err.message); loadFromParts(); });
-  } else { loadFromParts(); }
-}
-
-function parseItemsFromXml(xml) {
+function parseXml(xml) {
   const result = [];
-  const getVal = (str, tag) => {
-    const s = str.indexOf('<' + tag + '>');
-    const e = str.indexOf('</' + tag + '>');
-    if (s < 0 || e < 0) return '';
-    let val = str.substring(s + tag.length + 2, e).trim();
-    // Odstranit CDATA wrapper pokud existuje
-    if (val.startsWith('<![CDATA[') && val.endsWith(']]>')) {
-      val = val.substring(9, val.length - 3);
-    }
-    return val;
-  };
   let pos = 0;
   while (true) {
     const start = xml.indexOf('<SHOPITEM>', pos);
@@ -116,22 +73,34 @@ function parseItemsFromXml(xml) {
     const item = xml.substring(start + 10, end);
     const nazev = getVal(item, 'PRODUCTNAME');
     const avail = getVal(item, 'AVAIL') || '99';
-    // Nacitat produkty dostupne do 30 dni
-    if (nazev && parseInt(avail) <= 30) {
+    if (nazev && parseInt(avail) <= 3) {
       result.push({
         nazev,
-        cena:       parseFloat(getVal(item, 'PRICE_VAT') || getVal(item, 'PRICE') || '0'),
-        url:        getVal(item, 'URL'),
+        cena: parseFloat(getVal(item, 'PRICE_VAT') || getVal(item, 'PRICE') || '0'),
+        url: getVal(item, 'URL'),
         dostupnost: avail,
-        kategorie:  getVal(item, 'CATEGORYTEXT'),
-        vyrobce:    getVal(item, 'MANUFACTURER'),
-        popis:      getVal(item, 'DESCRIPTION').substring(0, 150),
-        imgurl:     getVal(item, 'IMAGE_LINK'),
+        kategorie: getVal(item, 'CATEGORYTEXT'),
+        vyrobce: getVal(item, 'MANUFACTURER'),
+        popis: getVal(item, 'DESCRIPTION').substring(0, 150),
+        imgurl: getVal(item, 'IMAGE_LINK'),
       });
     }
     pos = end + 11;
   }
   return result;
+}
+
+function loadProducts() {
+  if (CONFIG.FEED_URL) {
+    const proto = CONFIG.FEED_URL.startsWith('https') ? https : http;
+    proto.get(CONFIG.FEED_URL, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => { products = parseXml(data); console.log('Feed URL: ' + products.length + ' produktu'); });
+    }).on('error', err => { console.error('Feed URL chyba:', err.message); loadFromParts(); });
+  } else {
+    loadFromParts();
+  }
 }
 
 function loadFromParts() {
@@ -146,74 +115,53 @@ function loadFromParts() {
     for (let i = 0; i < parts.length; i++) {
       try {
         const xml = fs.readFileSync(parts[i], 'utf-8');
-        const items = parseItemsFromXml(xml);
+        const items = parseXml(xml);
         products = products.concat(items);
         console.log('Cast ' + (i+1) + ': +' + items.length + ' = ' + products.length);
       } catch(e) { console.error('Chyba casti ' + (i+1) + ':', e.message); }
     }
     console.log('Hotovo: ' + products.length + ' produktu');
-  } else { loadFromFile(); }
+  } else {
+    const f = path.join(__dirname, 'feed.xml');
+    if (fs.existsSync(f)) {
+      products = parseXml(fs.readFileSync(f, 'utf-8'));
+      console.log('feed.xml: ' + products.length + ' produktu');
+    } else {
+      console.warn('Zadny feed nenalezen');
+    }
+  }
 }
 
-function loadFromFile() {
-  if (!fs.existsSync(CONFIG.FEED_FILE)) { console.warn('feed.xml nenalezen'); return; }
-  try { loadProductsFromXml(fs.readFileSync(CONFIG.FEED_FILE, 'utf-8')); }
-  catch(e) { console.error('Chyba cteni feed.xml:', e.message); }
-}
+// Stopslova
+const STOP = new Set(['pro','ke','na','do','ze','jak','kde','co','nebo','jen','chci','mam','hledam','vybrat','koupit','nejlepsi','dobry']);
 
+// Kategoriova pravidla
 const CAT_RULES = [
   { words: ['notebook','laptop','ultrabook','macbook'], must: ['Notebooky | '] },
   { words: ['monitor','displej'], must: ['Monitory | '] },
-  { words: ['graficka karta','grafiku','gpu','rtx','gtx','radeon','geforce'], must: ['Grafick'] },
+  { words: ['graficka karta','gpu','rtx','gtx','radeon','geforce'], must: ['Grafick'] },
   { words: ['procesor','cpu','ryzen','intel core'], must: ['Procesory | '] },
-  { words: ['ram','pamet','dimm','ddr'], must: ['Paměti RAM | '] },
-  { words: ['ssd','nvme','pevny disk','hdd'], must: ['Disky | ','SSD | '] },
-  { words: ['tiskarna','laserova','inkoustova'], must: ['Tiskárny | '] },
-  { words: ['toner','cartridge','naplne','kazeta'], must: ['Spotřební materiál | '] },
-  { words: ['router','wifi','wi-fi'], must: ['Sítě | Routery','Sítě | MikroTik'] },
-  { words: ['switch','prepinac'], must: ['Sítě | Switche','Sítě | Cisco'] },
-  { words: ['klavesnice','keyboard'], must: ['Klávesnice | '] },
-  { words: ['mys','mouse'], must: ['Myši | '] },
-  { words: ['sluchatka','headset'], must: ['Sluchátka | '] },
+  { words: ['ram','pamet','dimm','ddr'], must: ['Pam'] },
+  { words: ['ssd','nvme','pevny disk','hdd'], must: ['Disky | ','SSD'] },
+  { words: ['tiskarna','laserova','inkoustova'], must: ['Tisk'] },
+  { words: ['toner','cartridge','naplne','kazeta'], must: ['Spot'] },
+  { words: ['router','wifi','wi-fi'], must: ['Site | Routery','Site | MikroTik'] },
+  { words: ['switch','prepinac sitovy'], must: ['Site | Switche','Site | Cisco'] },
+  { words: ['klavesnice','keyboard'], must: ['Klavesnice | '] },
+  { words: ['mys ','mouse','herni mys'], must: ['Mysi | '] },
+  { words: ['sluchatka','headset'], must: ['Sluch'] },
   { words: ['tablet','ipad'], must: ['Tablety | '] },
-  { words: ['telefon','smartphone','iphone','samsung','xiaomi','mobilni telefon','mobil'], must: ['Telefony | Mobilní'] },
-  { words: ['playstation','xbox','nintendo','ps5','konzole'], must: ['Herní konzole','Konzole | '] },
+  { words: ['telefon','smartphone','iphone','samsung','xiaomi','mobil'], must: ['Telefony | '] },
+  { words: ['playstation','xbox','nintendo','ps5','konzole'], must: ['Herni konzole','Konzole'] },
   { words: ['projektor'], must: ['Projektory | '] },
-  { words: ['televize','televizor','smart tv'], must: ['Televize | ','Televizory | '] },
-  { words: ['fotoaparat','zrcadlovka','dslr'], must: ['Fotoaparáty | '] },
-  { words: ['hdmi','usb kabel','displayport','kabel'], must: ['Kabely | ','Konektory | '] },
+  { words: ['televize','televizor','smart tv'], must: ['Televize | '] },
+  { words: ['fotoaparat','zrcadlovka','dslr'], must: ['Fotoapar'] },
+  { words: ['hdmi','usb kabel','displayport'], must: ['Kabely | '] },
   { words: ['gril','sekacka','zahradni'], must: ['Zahrada | '] },
   { words: ['reproduktor','soundbar'], must: ['Reproduktory | ','Soundbary | '] },
-  { words: ['sluchatka bezdrátová','true wireless','airpods'], must: ['Sluchátka | Bezdrátová'] },
 ];
 
-const STOP = new Set(['pro','ke','na','do','ze','pri','jak','jaky','kde','co','ktery','ktera','ktere','nebo','jen','chci','mam','mit','hledam','vybrat','koupit','poradit','nejlepsi','doporuct']);
-
-(['pro','ke','na','do','ze','pri','jak','jaky','kde','co','ktery','ktera','ktere','nebo','jen','chci','mam','mit','hledam','vybrat','koupit','poradit','nejlepsi','doporuct']);
-
-const CAT_RULES = [
-  { words: ['notebook','laptop','ultrabook'], must: ['Notebooky | '] },
-  { words: ['monitor','displej'], must: ['Monitory | '] },
-  { words: ['graficka karta','grafiku','gpu','rtx','gtx','radeon','geforce'], must: ['graficke karty','graficka'] },
-  { words: ['procesor','cpu','ryzen','intel core'], must: ['procesory','procesor'] },
-  { words: ['ram','pamet','dimm','ddr'], must: ['pameti','ram','dimm'] },
-  { words: ['ssd','nvme','pevny disk','hdd'], must: ['ssd','hdd','disky'] },
-  { words: ['tiskarna','laserova','inkoustova'], must: ['Tiskarny | '] },
-  { words: ['toner','cartridge','naplne','kazeta'], must: ['Spotrebni material | '] },
-  { words: ['router','wifi','wi-fi','switch'], must: ['Site | Aktivni prvky','Site | Routery','Site | WiFi'] },
-  { words: ['klavesnice','keyboard'], must: ['klavesnice'] },
-  { words: ['mys','mouse'], must: ['mysi','mys'] },
-  { words: ['sluchatka','headset'], must: ['sluchatka'] },
-  { words: ['tablet','ipad'], must: ['Tablety | '] },
-  { words: ['telefon','smartphone','iphone','samsung','xiaomi','mobilni telefon','mobil'], must: ['Telefony | Mobilni'] },
-  { words: ['playstation','xbox','nintendo','ps5','konzole'], must: ['Herni konzole','Konzole | '] },
-  { words: ['projektor'], must: ['projektory','projektor'] },
-  { words: ['televize','televizor','smart tv'], must: ['televize','televizory'] },
-  { words: ['fotoaparat','zrcadlovka','dslr'], must: ['fotoaparaty','fotoaparat'] },
-  { words: ['hdmi','usb kabel','displayport','kabel'], must: ['kabely','konektory'] },
-  { words: ['gril','sekacka','zahradni'], must: ['zahrada','grily','zahradni'] },
-];
-
+// Vyhledavani
 function search(query, max) {
   max = max || 5;
   if (products.length === 0) return [];
@@ -225,12 +173,12 @@ function search(query, max) {
   }
 
   const kws = q.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
-  const bm = q.match(/(\d[\d\s]{0,6})\s*(kc|czk|tisic|tis|k\b)/);
-  const budget = bm ? parseFloat(bm[1].replace(/\s/g,'')) * (/tis|k\b/.test(bm[2]) ? 1000 : 1) : null;
+  const bm = q.match(/(\d+)\s*(kc|czk|tisic|tis\b|k\b)/);
+  const budget = bm ? parseFloat(bm[1]) * (/tis|k\b/.test(bm[2]) ? 1000 : 1) : null;
 
   let pool = products;
   if (catFilter.length > 0) {
-    const cf = products.filter(p => catFilter.some(f => (p.kategorie + ' ' + p.nazev).toLowerCase().includes(f)));
+    const cf = products.filter(p => catFilter.some(f => (p.kategorie + ' ' + p.nazev).toLowerCase().includes(f.toLowerCase())));
     if (cf.length >= 3) pool = cf;
   }
   if (budget && budget > 500) {
@@ -249,7 +197,7 @@ function search(query, max) {
     .slice(0, max)
     .map(p => ({
       nazev: p.nazev,
-      cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kč' : 'cena na dotaz',
+      cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kc' : 'cena na dotaz',
       url: p.url,
       dostupnost: p.dostupnost === '0' ? 'Skladem' : 'Dostupne za ' + p.dostupnost + ' dni',
       kategorie: p.kategorie,
@@ -257,18 +205,20 @@ function search(query, max) {
     }));
 }
 
+// System prompt
 function buildPrompt(found) {
   const pobocky = CONFIG.POBOCKY.map(p => '- ' + p.nazev + ': ' + p.adresa).join('\n');
   const katalog = found.length > 0
-    ? '\n\nAKTUALNI PRODUKTY Z KATALOGU MIRONET:\n' + found.map(p => {
-        const popis = p.popis ? ' | ' + p.popis.substring(0, 200).replace(/\s+/g, ' ') : '';
-        return '- ' + p.nazev + ' | ' + p.cena + ' | ' + p.dostupnost + (p.url ? ' | ' + p.url : '') + popis;
-      }).join('\n')
-    : '\n\n(Katalog neobsahuje presnou shodu — nasmer na mironet.cz nebo linku 777 900 777)';
+    ? '\n\nPRODUKTY Z KATALOGU:\n' + found.map(p =>
+        '- ' + p.nazev + ' | ' + p.cena + ' | ' + p.dostupnost + (p.url ? ' | ' + p.url : '') +
+        (p.popis ? ' | ' + p.popis.substring(0, 150) : '')
+      ).join('\n')
+    : '\n\n(Produkt nenalezen v katalogu - nasmer na mironet.cz nebo 777 900 777)';
 
-  return 'Jsi AI asistent e-shopu Mironet.cz — ceskeho specialisty na IT techniku, notebooky, komponenty, monitory, sitove prvky, tiskarny, telefony a spotrebni elektroniku.\n\nKomunikujes cesky, pratelsky a odborne. Pises v kratkych odstavcich bez odrazek a BEZ markdown formatovani. Pis gramaticky spravne cesky.\n\nPOBOCKY MIRONET:\n' + pobocky + '\n\nZAKAZNICKA LINKA: 777 900 777 (Po-Pa 8-17 h)\nOBJEDNAVKY: mironet.cz/muj-ucet\n\nPRAVIDLA:\n- Navazuj na celou historii konverzace\n- Pokud zakaznik upresni pozadavek nebo rozpocet, ihned reaguj\n- Doporucuj produkty z katalogu nize — mas jejich aktualni ceny a dostupnost\n- Technicke parametry vysvetluj jednodusse\n- Nikdy nevymyslej produkty ani ceny mimo katalog\n- Max 4-5 vet na odpoved' + katalog;
+  return 'Jsi AI asistent e-shopu Mironet.cz - ceskeho specialisty na IT techniku, notebooky, komponenty, monitory, tiskarny, telefony a elektroniku.\n\nKomunikujes cesky, pratelsky a odborne. Pises bez markdown formatovani. Pis gramaticky spravne cesky.\n\nPOBOCKY:\n' + pobocky + '\n\nLINKA: 777 900 777 (Po-Pa 8-17h)\nOBJEDNAVKY: mironet.cz/muj-ucet\n\nPravidla:\n- Navazuj na historii konverzace\n- Doporucuj produkty z katalogu nize\n- Nikdy nevymyslej produkty ani ceny\n- Max 4-5 vet' + katalog;
 }
 
+// Claude API
 function callClaude(messages, systemText) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ model: CONFIG.MODEL, max_tokens: 800, system: systemText, messages });
@@ -279,7 +229,7 @@ function callClaude(messages, systemText) {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => {
-        try { const d = JSON.parse(data); if (d.error) return reject(new Error(d.error.message)); resolve(d?.content?.[0]?.text || 'Omlouvam se, nastala chyba.'); }
+        try { const d = JSON.parse(data); if (d.error) return reject(new Error(d.error.message)); resolve(d?.content?.[0]?.text || 'Nastala chyba.'); }
         catch(e) { reject(e); }
       });
     });
@@ -287,12 +237,13 @@ function callClaude(messages, systemText) {
   });
 }
 
+// Endpoints
 app.post('/chat', requireAuth, async (req, res) => {
   const { messages = [], userMessage } = req.body;
   if (!userMessage) return res.status(400).json({ error: 'Chybi userMessage' });
-  if (!CONFIG.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY neni nastaven' });
+  if (!CONFIG.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API klic neni nastaven' });
 
-  const SERVISNI = /objednavk|dorucen|doprav|vracen|reklamac|stav obj|kdy prijde|zasil|vymena|storno|platba|faktura/i;
+  const SERVISNI = /objednavk|dorucen|doprav|vracen|reklamac|kdy prijde|zasil|storno|platba|faktura/i;
   const recent = messages.slice(-5).map(m => m.content).join(' ');
   const jeServisni = SERVISNI.test(userMessage) || SERVISNI.test(recent);
 
@@ -310,13 +261,10 @@ app.post('/chat', requireAuth, async (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', model: CONFIG.MODEL, produktu: products.length, apiKlicNastaven: !!CONFIG.ANTHROPIC_API_KEY, pobocky: CONFIG.POBOCKY.map(p => p.nazev) });
+  res.json({ status: 'ok', model: CONFIG.MODEL, produktu: products.length, apiKlic: !!CONFIG.ANTHROPIC_API_KEY, pobocky: CONFIG.POBOCKY.map(p => p.nazev) });
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 loadProducts();
-app.listen(CONFIG.PORT, () => {
-  console.log('Mironet AI Asistent bezi na portu ' + CONFIG.PORT);
-  if (!CONFIG.ANTHROPIC_API_KEY) console.warn('ANTHROPIC_API_KEY neni nastaven!');
-});
+app.listen(CONFIG.PORT, () => { console.log('Mironet AI Asistent bezi na portu ' + CONFIG.PORT); });
