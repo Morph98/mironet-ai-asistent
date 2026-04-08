@@ -216,7 +216,7 @@ const CAT_RULES = [
 
 // Vyhledavani
 function search(query, max) {
-  max = max || 5;
+  max = max || 30;
   if (products.length === 0) return [];
   const q = query.toLowerCase();
 
