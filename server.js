@@ -55,22 +55,34 @@ app.post('/login', (req, res) => {
 let products = [];
 
 function loadProductsFromXml(xml) {
-  xml2js.parseString(xml, { explicitArray: false }, (err, result) => {
-    if (err) { console.error('Chyba XML:', err.message); return; }
-    const items = result?.SHOP?.SHOPITEM || [];
-    const arr = Array.isArray(items) ? items : [items];
-    products = arr.map(item => ({
-      nazev:      item.PRODUCTNAME || '',
-      cena:       parseFloat(item.PRICE_VAT || item.PRICE || 0),
-      url:        item.URL || '',
-      dostupnost: item.AVAIL || '0',
-      kategorie:  item.CATEGORYTEXT || '',
-      vyrobce:    item.MANUFACTURER || '',
-      popis:      item.DESCRIPTION || '',
-      imgurl:     item.IMAGE_LINK || '',
-    })).filter(p => p.nazev);
-    console.log('Nacteno ' + products.length + ' produktu');
-  });
+  // Parsovat efektivne - bez ukladani celeho stromu
+  const result = [];
+  const itemRegex = /<SHOPITEM>([\s\S]*?)<\/SHOPITEM>/g;
+  let match;
+  const getTag = (str, tag) => {
+    const m = str.match(new RegExp('<' + tag + '>([\s\S]*?)<\/' + tag + '>'));
+    return m ? m[1].trim() : '';
+  };
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const item = match[1];
+    const nazev = getTag(item, 'PRODUCTNAME');
+    if (!nazev) continue;
+    result.push({
+      nazev,
+      cena:       parseFloat(getTag(item, 'PRICE_VAT') || getTag(item, 'PRICE') || '0'),
+      url:        getTag(item, 'URL'),
+      dostupnost: getTag(item, 'AVAIL') || '0',
+      kategorie:  getTag(item, 'CATEGORYTEXT'),
+      vyrobce:    getTag(item, 'MANUFACTURER'),
+      popis:      getTag(item, 'DESCRIPTION').substring(0, 200),
+      imgurl:     getTag(item, 'IMAGE_LINK'),
+    });
+  }
+  products = result;
+  console.log('Nacteno ' + products.length + ' produktu');
+  // Uvolnit pamet
+  xml = null;
+  if (global.gc) global.gc();
 }
 
 function loadProducts() {
@@ -85,36 +97,56 @@ function loadProducts() {
   } else { loadFromParts(); }
 }
 
+function parseItemsFromXml(xml) {
+  const result = [];
+  const getVal = (str, tag) => {
+    const s = str.indexOf('<' + tag + '>');
+    const e = str.indexOf('</' + tag + '>');
+    return (s >= 0 && e >= 0) ? str.substring(s + tag.length + 2, e).trim() : '';
+  };
+  let pos = 0;
+  while (true) {
+    const start = xml.indexOf('<SHOPITEM>', pos);
+    if (start < 0) break;
+    const end = xml.indexOf('</SHOPITEM>', start);
+    if (end < 0) break;
+    const item = xml.substring(start + 10, end);
+    const nazev = getVal(item, 'PRODUCTNAME');
+    if (nazev) {
+      result.push({
+        nazev,
+        cena:       parseFloat(getVal(item, 'PRICE_VAT') || getVal(item, 'PRICE') || '0'),
+        url:        getVal(item, 'URL'),
+        dostupnost: getVal(item, 'AVAIL') || '0',
+        kategorie:  getVal(item, 'CATEGORYTEXT'),
+        vyrobce:    getVal(item, 'MANUFACTURER'),
+        popis:      getVal(item, 'DESCRIPTION').substring(0, 150),
+        imgurl:     getVal(item, 'IMAGE_LINK'),
+      });
+    }
+    pos = end + 11;
+  }
+  return result;
+}
+
 function loadFromParts() {
   const parts = [];
   for (let i = 1; i <= 7; i++) {
     const f = path.join(__dirname, 'feed_part' + i + '.xml');
     if (fs.existsSync(f)) parts.push(f);
   }
-  console.log('Hledam feed_part soubory, nalezeno: ' + parts.length);
+  console.log('Nalezeno ' + parts.length + ' casti feedu');
   if (parts.length > 0) {
-    console.log('Nacitam ' + parts.length + ' casti feedu...');
-    try {
-      // Jednoduse spojit XML - odstrihnout </SHOP> z konce kazde casti krome posledni
-      // a <SHOP> ze zacatku kazde casti krome prvni
-      let combined = '';
-      for (let i = 0; i < parts.length; i++) {
-        let xml = fs.readFileSync(parts[i], 'utf-8').trim();
-        if (i > 0) {
-          // Odrizni vse pred prvnim <SHOPITEM>
-          const firstItem = xml.indexOf('<SHOPITEM>');
-          if (firstItem > 0) xml = xml.substring(firstItem);
-        }
-        if (i < parts.length - 1) {
-          // Odrizni </SHOP> z konce
-          const lastShop = xml.lastIndexOf('</SHOP>');
-          if (lastShop > 0) xml = xml.substring(0, lastShop);
-        }
-        combined += xml;
-        console.log('Cast ' + (i+1) + ' nactena, velikost: ' + Math.round(xml.length/1024) + 'KB');
-      }
-      loadProductsFromXml(combined);
-    } catch(e) { console.error('Chyba spojovani:', e.message); loadFromFile(); }
+    products = [];
+    for (let i = 0; i < parts.length; i++) {
+      try {
+        const xml = fs.readFileSync(parts[i], 'utf-8');
+        const items = parseItemsFromXml(xml);
+        products = products.concat(items);
+        console.log('Cast ' + (i+1) + ': +' + items.length + ' = ' + products.length);
+      } catch(e) { console.error('Chyba casti ' + (i+1) + ':', e.message); }
+    }
+    console.log('Hotovo: ' + products.length + ' produktu');
   } else { loadFromFile(); }
 }
 
