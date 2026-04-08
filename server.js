@@ -1091,26 +1091,14 @@ app.get('/debug-search', (req, res) => {
   const qn = norm(q);
   const filtTokens = tokenize(qn).filter(t => !/^\d+$/.test(t));
   const expanded = expandTokens(filtTokens);
-  // Ukáž top 3 produkty z kategorie Notebooky se skóre
+  const phrase = filtTokens.slice(0,3).join(' ');
   const notebooky = products.filter(p => (p.kategorie||'').startsWith('Notebooky')).slice(0,3);
   const scoredNb = notebooky.map(p => ({
     nazev: p.nazev.substring(0,50),
     kategorie: p.kategorie,
-    score: (() => {
-      const nl = norm(p.nazev);
-      const kl = norm(p.kategorie + ' ' + p.vyrobce);
-      let s = 0;
-      for (const [token, weight] of expanded) {
-        const nt = norm(token);
-        if (nl.includes(nt)) s += weight * 3;
-        else if (kl.includes(nt)) s += weight * 1;
-      }
-      const anyMatch = filtTokens.some(t => nl.includes(t) || kl.includes(t));
-      if (!anyMatch) s = Math.min(s, 2);
-      return s;
-    })()
+    score: scoreProduct(p, expanded, filtTokens, phrase)
   }));
-  res.json({ query: q, tokens: filtTokens, expanded: Object.fromEntries(expanded), search_results: results.slice(0,3), notebooky_score: scoredNb });
+  res.json({ query: q, tokens: filtTokens, search_results: results.slice(0,3), notebooky_score: scoredNb });
 });
 
 app.get('/debug-kat', (req, res) => {
@@ -1137,7 +1125,7 @@ app.get('/debug-phones', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', model: CONFIG.MODEL, produktu: products.length, apiKlic: !!CONFIG.ANTHROPIC_API_KEY, pobocky: CONFIG.POBOCKY.map(p => p.nazev) });
+  res.json({ status: 'ok', version: '2.1', model: CONFIG.MODEL, produktu: products.length, apiKlic: !!CONFIG.ANTHROPIC_API_KEY, pobocky: CONFIG.POBOCKY.map(p => p.nazev) });
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
