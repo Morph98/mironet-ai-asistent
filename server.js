@@ -314,7 +314,15 @@ app.post('/chat', requireAuth, async (req, res) => {
 
   try {
     const reply = await callClaude(history, buildPrompt(found));
-    res.json({ reply, foundProducts: found });
+    // Zobrazit pouze produkty ktere Claude zminil v textu odpovedi
+    const replyLower = reply.toLowerCase();
+    const mentioned = found.filter(p => {
+      const words = p.nazev.toLowerCase().split('/')[0].trim().split(' ').filter(w => w.length > 3);
+      const matches = words.slice(0, 5).filter(w => replyLower.includes(w)).length;
+      return matches >= 2;
+    });
+    const toShow = mentioned.length >= 1 ? mentioned.slice(0, 5) : found.slice(0, 3);
+    res.json({ reply, foundProducts: toShow });
   } catch(e) {
     console.error('Claude error:', e.message);
     res.status(500).json({ error: e.message });
