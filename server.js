@@ -112,12 +112,14 @@ function parseItemsFromXml(xml) {
     if (end < 0) break;
     const item = xml.substring(start + 10, end);
     const nazev = getVal(item, 'PRODUCTNAME');
-    if (nazev) {
+    const avail = getVal(item, 'AVAIL') || '99';
+    // Nacitat jen skladem (0) nebo do 3 dni (1,2,3) - snizuje pametove naroky
+    if (nazev && parseInt(avail) <= 3) {
       result.push({
         nazev,
         cena:       parseFloat(getVal(item, 'PRICE_VAT') || getVal(item, 'PRICE') || '0'),
         url:        getVal(item, 'URL'),
-        dostupnost: getVal(item, 'AVAIL') || '0',
+        dostupnost: avail,
         kategorie:  getVal(item, 'CATEGORYTEXT'),
         vyrobce:    getVal(item, 'MANUFACTURER'),
         popis:      getVal(item, 'DESCRIPTION').substring(0, 150),
