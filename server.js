@@ -73,7 +73,7 @@ function parseXml(xml) {
     const item = xml.substring(start + 10, end);
     const nazev = getVal(item, 'PRODUCTNAME');
     const avail = getVal(item, 'AVAIL') || '99';
-    if (nazev && parseInt(avail) <= 14) {
+    if (nazev) {  // Všechny produkty bez ohledu na dostupnost
       result.push({
         nazev,
         cena: parseFloat(getVal(item, 'PRICE_VAT') || getVal(item, 'PRICE') || '0'),
@@ -320,13 +320,15 @@ app.get('/debug-phones', (req, res) => {
   const q = req.query.q || 'Samsung';
   const phones = products.filter(p => p.kategorie && p.kategorie.includes('Telefony | Mobiln'));
   const samsung = products.filter(p => p.nazev && p.nazev.toLowerCase().includes(q.toLowerCase()));
+  const samsungPhones = products.filter(p => p.kategorie && p.kategorie.includes('Samsung Galaxy'));
   const allKats = [...new Set(phones.map(p => p.kategorie.split(' | ').slice(0,3).join(' | ')))].sort();
   res.json({
     celkem_produktu: products.length,
     telefony_celkem: phones.length,
+    samsung_telefony: samsungPhones.length,
+    samsung_prvni_3: samsungPhones.slice(0, 3).map(p => ({ nazev: p.nazev, avail: p.dostupnost, cena: p.cena })),
     hledano_q: q,
     nalezeno_q: samsung.length,
-    prvni_q: samsung.slice(0, 3).map(p => ({ nazev: p.nazev, avail: p.dostupnost, cena: p.cena, kat: p.kategorie })),
     kategorie_telefony: allKats
   });
 });
