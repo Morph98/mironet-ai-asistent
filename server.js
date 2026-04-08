@@ -81,7 +81,31 @@ function loadProducts() {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => loadProductsFromXml(data));
-    }).on('error', err => { console.error('Chyba feedu:', err.message); loadFromFile(); });
+    }).on('error', err => { console.error('Chyba feedu:', err.message); loadFromParts(); });
+  } else { loadFromParts(); }
+}
+
+function loadFromParts() {
+  const parts = [];
+  for (let i = 1; i <= 7; i++) {
+    const f = path.join(__dirname, 'feed_part' + i + '.xml');
+    if (fs.existsSync(f)) parts.push(f);
+  }
+  if (parts.length > 0) {
+    console.log('Nacitam ' + parts.length + ' casti feedu...');
+    try {
+      let allItems = [];
+      let header = '';
+      for (let i = 0; i < parts.length; i++) {
+        const xml = fs.readFileSync(parts[i], 'utf-8');
+        if (i === 0) { const fi = xml.indexOf('<SHOPITEM>'); header = xml.substring(0, fi); }
+        const m = xml.match(/<SHOPITEM>[\s\S]*?<\/SHOPITEM>/g) || [];
+        allItems = allItems.concat(m);
+      }
+      const combined = header + allItems.join('') + '</SHOP>';
+      console.log('Spojeno ' + allItems.length + ' polozek');
+      loadProductsFromXml(combined);
+    } catch(e) { console.error('Chyba spojovani:', e.message); loadFromFile(); }
   } else { loadFromFile(); }
 }
 
