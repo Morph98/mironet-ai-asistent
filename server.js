@@ -137,28 +137,81 @@ const STOP = new Set(['pro','ke','na','do','ze','jak','kde','co','nebo','jen','c
 
 // Kategoriova pravidla
 const CAT_RULES = [
-  { words: ['notebook','laptop','ultrabook','macbook'], must: ['Notebooky | '] },
-  { words: ['monitor','displej'], must: ['Monitory | '] },
-  { words: ['graficka karta','gpu','rtx','gtx','radeon','geforce'], must: ['Grafick'] },
-  { words: ['procesor','cpu','ryzen','intel core'], must: ['Procesory | '] },
-  { words: ['ram','pamet','dimm','ddr'], must: ['Pam'] },
-  { words: ['ssd','nvme','pevny disk','hdd'], must: ['Disky | ','SSD'] },
-  { words: ['tiskarna','laserova','inkoustova'], must: ['Tisk'] },
-  { words: ['toner','cartridge','naplne','kazeta'], must: ['Spot'] },
-  { words: ['router','wifi','wi-fi'], must: ['Site | Routery','Site | MikroTik'] },
-  { words: ['switch','prepinac sitovy'], must: ['Site | Switche','Site | Cisco'] },
-  { words: ['klavesnice','keyboard'], must: ['Klavesnice | '] },
-  { words: ['mys ','mouse','herni mys'], must: ['Mysi | '] },
-  { words: ['sluchatka','headset'], must: ['Sluch'] },
-  { words: ['tablet','ipad'], must: ['Tablety | '] },
-  { words: ['telefon','smartphone','iphone','samsung','xiaomi','mobil'], must: ['Telefony | Mobiln'] },
-  { words: ['playstation','xbox','nintendo','ps5','konzole'], must: ['Herni konzole','Konzole'] },
-  { words: ['projektor'], must: ['Projektory | '] },
-  { words: ['televize','televizor','smart tv'], must: ['Televize | '] },
-  { words: ['fotoaparat','zrcadlovka','dslr'], must: ['Fotoapar'] },
-  { words: ['hdmi','usb kabel','displayport'], must: ['Kabely | '] },
-  { words: ['gril','sekacka','zahradni'], must: ['Zahrada | '] },
-  { words: ['reproduktor','soundbar'], must: ['Reproduktory | ','Soundbary | '] },
+  // Notebooky - kategorie "Notebooky | ..."
+  { words: ['notebook','laptop','ultrabook','macbook','přenosný počítač'],
+    must: ['Notebooky | '] },
+  // Monitory - kategorie "Monitory | ..."
+  { words: ['monitor','displej','lcd','obrazovka'],
+    must: ['Monitory | '] },
+  // Grafické karty
+  { words: ['grafická karta','grafiku','gpu','rtx','gtx','radeon','geforce','grafická'],
+    must: ['Komponenty | Grafické karty'] },
+  // Procesory
+  { words: ['procesor','cpu','ryzen','core i5','core i7','core i9','intel core'],
+    must: ['Komponenty | Procesory'] },
+  // RAM paměti
+  { words: ['ram','paměť ram','dimm','ddr4','ddr5','sodimm'],
+    must: ['Komponenty | Paměti RAM'] },
+  // SSD a disky
+  { words: ['ssd','nvme','m.2','pevný disk','hdd','harddisk'],
+    must: ['Komponenty | SSD', 'Komponenty | HDD'] },
+  // Flash disky
+  { words: ['flash disk','usb disk','pendrive'],
+    must: ['Komponenty | Flash disky'] },
+  // NAS
+  { words: ['nas','síťové úložiště','network storage'],
+    must: ['Komponenty | Datová úložiště NAS'] },
+  // Tiskárny - kategorie "Tiskárny a multifunkce | ..."
+  { words: ['tiskárna','laserová tiskárna','inkoustová tiskárna','multifunkční tiskárna','3d tiskárna'],
+    must: ['Tiskárny a multifunkce | '] },
+  // Spotřební materiál (tonery, cartridge)
+  { words: ['toner','cartridge','náplň do tiskárny','inkoustová náplň','kazeta do tiskárny'],
+    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
+  // Routery a WiFi
+  { words: ['router','wifi router','wi-fi router','mesh','access point'],
+    must: ['Sítě | Routery', 'Sítě | Access Pointy', 'Sítě | MikroTik'] },
+  // Switche
+  { words: ['switch','síťový přepínač'],
+    must: ['Sítě | Switche', 'Sítě | Cisco Small Business'] },
+  // Klávesnice
+  { words: ['klávesnice','keyboard','mechanická klávesnice'],
+    must: ['Klávesnice | '] },
+  // Myši
+  { words: ['myš','myši','herní myš','bezdrátová myš'],
+    must: ['Myši | '] },
+  // Sluchátka
+  { words: ['sluchátka','headset','bezdrátová sluchátka','airpods'],
+    must: ['Sluchátka | '] },
+  // Tablety
+  { words: ['tablet','ipad','android tablet'],
+    must: ['Tablety | '] },
+  // Telefony - CHYTRÉ telefony (ne tlačítkové)
+  { words: ['smartphone','chytrý telefon','android telefon','iphone','samsung galaxy','xiaomi','motorola','google pixel','oneplus','honor','realme','vivo','poco'],
+    must: ['Telefony | Mobilní telefony | Apple', 'Telefony | Mobilní telefony | Samsung', 'Telefony | Mobilní telefony | Xiaomi', 'Telefony | Mobilní telefony | Motorola', 'Telefony | Mobilní telefony | Google', 'Telefony | Mobilní telefony | OnePlus', 'Telefony | Mobilní telefony | HONOR', 'Telefony | Mobilní telefony | Realme', 'Telefony | Mobilní telefony | POCO', 'Telefony | Mobilní telefony | VIVO', 'Telefony | Mobilní telefony | ZTE'] },
+  // Obecně mobilní telefon
+  { words: ['telefon','mobil','mobilní telefon'],
+    must: ['Telefony | Mobilní telefony'] },
+  // Herní konzole
+  { words: ['playstation','xbox','nintendo','ps5','ps4','konzole'],
+    must: ['Herní konzole', 'Konzole | '] },
+  // Projektory
+  { words: ['projektor'],
+    must: ['Projektory | '] },
+  // Televize
+  { words: ['televize','televizor','smart tv','oled tv'],
+    must: ['Televize | '] },
+  // Fotoaparáty
+  { words: ['fotoaparát','zrcadlovka','dslr','bezzrcadlovka'],
+    must: ['Fotoaparáty | '] },
+  // Kabely HDMI, USB
+  { words: ['hdmi kabel','displayport kabel','usb kabel'],
+    must: ['Příslušenství | Kabely a redukce'] },
+  // Reproduktory, soundbary
+  { words: ['reproduktor','soundbar','bluetooth reproduktor'],
+    must: ['Reproduktory | ', 'Soundbary | ', 'Audio-Video | Reproduktory'] },
+  // Zahrada
+  { words: ['gril','sekačka','zahradní'],
+    must: ['Zahrada | '] },
 ];
 
 // Vyhledavani
