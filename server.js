@@ -270,7 +270,7 @@ function search(query, max) {
 function buildPrompt(found) {
   const pobocky = CONFIG.POBOCKY.map(p => '- ' + p.nazev + ': ' + p.adresa).join('\n');
   const katalog = found.length > 0
-    ? '\n\nPRODUKTY Z KATALOGU:\n' + found.map(p =>
+    ? '\n\nPRODUKTY Z KATALOGU:\n' + found.map((p, idx) =>
         '[' + idx + '] ' + p.nazev + ' | ' + p.cena + ' | ' + p.dostupnost +
         (p.popis ? ' | ' + p.popis.substring(0, 100) : '')
       ).join('\n')
