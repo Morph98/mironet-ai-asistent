@@ -102,7 +102,13 @@ function parseItemsFromXml(xml) {
   const getVal = (str, tag) => {
     const s = str.indexOf('<' + tag + '>');
     const e = str.indexOf('</' + tag + '>');
-    return (s >= 0 && e >= 0) ? str.substring(s + tag.length + 2, e).trim() : '';
+    if (s < 0 || e < 0) return '';
+    let val = str.substring(s + tag.length + 2, e).trim();
+    // Odstranit CDATA wrapper pokud existuje
+    if (val.startsWith('<![CDATA[') && val.endsWith(']]>')) {
+      val = val.substring(9, val.length - 3);
+    }
+    return val;
   };
   let pos = 0;
   while (true) {
@@ -174,7 +180,7 @@ const CAT_RULES = [
   { words: ['mys','mouse'], must: ['mysi','mys'] },
   { words: ['sluchatka','headset'], must: ['sluchatka'] },
   { words: ['tablet','ipad'], must: ['tablety','tablet'] },
-  { words: ['telefon','smartphone','iphone','samsung','xiaomi'], must: ['telefony','smartphone','mobilni'] },
+  { words: ['telefon','smartphone','iphone','samsung','xiaomi','mobilni telefon','mobil'], must: ['Telefony','mobilni telefony','smartphone'] },
   { words: ['playstation','xbox','nintendo','ps5','konzole'], must: ['konzole','playstation','xbox'] },
   { words: ['projektor'], must: ['projektory','projektor'] },
   { words: ['televize','televizor','smart tv'], must: ['televize','televizory'] },
@@ -218,7 +224,7 @@ function search(query, max) {
     .slice(0, max)
     .map(p => ({
       nazev: p.nazev,
-      cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kc' : 'cena na dotaz',
+      cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kč' : 'cena na dotaz',
       url: p.url,
       dostupnost: p.dostupnost === '0' ? 'Skladem' : 'Dostupne za ' + p.dostupnost + ' dni',
       kategorie: p.kategorie,
