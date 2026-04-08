@@ -73,7 +73,7 @@ function parseXml(xml) {
     const item = xml.substring(start + 10, end);
     const nazev = getVal(item, 'PRODUCTNAME');
     const avail = getVal(item, 'AVAIL') || '99';
-    if (nazev && parseInt(avail) <= 3) {
+    if (nazev && parseInt(avail) <= 14) {
       result.push({
         nazev,
         cena: parseFloat(getVal(item, 'PRICE_VAT') || getVal(item, 'PRICE') || '0'),
@@ -252,7 +252,7 @@ function search(query, max) {
       nazev: p.nazev,
       cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kc' : 'cena na dotaz',
       url: p.url,
-      dostupnost: p.dostupnost === '0' ? 'Skladem' : 'Dostupne za ' + p.dostupnost + ' dni',
+      dostupnost: p.dostupnost === '0' ? 'Skladem' : (parseInt(p.dostupnost) <= 3 ? 'Do 3 dni' : 'Do ' + p.dostupnost + ' dni'),
       kategorie: p.kategorie,
       imgurl: p.imgurl,
     }));
