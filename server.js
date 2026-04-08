@@ -186,6 +186,9 @@ const STOP = new Set(['pro','ke','na','do','ze','jak','kde','co','nebo','jen','c
 
 // Kategoriova pravidla
 const CAT_RULES = [
+  // Kabely a redukce - MUSÍ být před notebooky/telefony, jinak "kabel pro notebook" matchne notebook
+  { words: ['kabel','redukce','adaptér kabel','hdmi kabel','displayport kabel','usb kabel','usb-c kabel','usb c kabel','nabíjecí kabel','prodlužovací kabel','audio kabel','jack kabel','optický kabel'],
+    must: ['Příslušenství | Kabely a redukce', 'Kabely a konektory', 'Kabely | '] },
   // Notebooky - kategorie "Notebooky | ..."
   { words: ['notebook','laptop','ultrabook','macbook','přenosný počítač'],
     must: ['Notebooky | '] },
@@ -289,6 +292,14 @@ function search(query, max) {
     ? parseFloat(bmRaw[1].replace(/\s/g,'')) * (/tis|k\b/i.test(bmRaw[2]) && !/kc|kč/i.test(bmRaw[2]) ? 1000 : 1)
     : null;
 
+  // Must-contain filtr: pokud query obsahuje konkrétní produktové slovo,
+  // vyfiltrovat jen produkty kde je toto slovo přímo v názvu
+  const MUST_CONTAIN_WORDS = ['kabel','redukce','pouzdro','obal','stojánek','držák','nabíječka','baterie','myš','klávesnice','sluchátka','headset','tiskárna','monitor','projektor'];
+  let mustContain = null;
+  for (const w of MUST_CONTAIN_WORDS) {
+    if (q.includes(w)) { mustContain = w; break; }
+  }
+
   let pool = products;
   if (catFilter.length > 0) {
     let cf = products.filter(p => catFilter.some(f => (p.kategorie + ' ' + p.nazev).toLowerCase().includes(f.toLowerCase())));
@@ -302,6 +313,12 @@ function search(query, max) {
   if (budget && budget > 500) {
     const bf = pool.filter(p => p.cena > 0 && p.cena <= budget * 1.1);
     if (bf.length >= 2) pool = bf;
+  }
+
+  // Aplikovat must-contain filtr na název produktu
+  if (mustContain) {
+    const mcf = pool.filter(p => p.nazev.toLowerCase().includes(mustContain));
+    if (mcf.length >= 2) pool = mcf;
   }
 
   // Filtr podle velikosti displeje
