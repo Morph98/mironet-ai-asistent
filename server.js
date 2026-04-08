@@ -1022,6 +1022,12 @@ app.get('/debug-feed', (req, res) => {
   res.json({ celkem_produktu: products.length, top_kategorie: topKats, prvnich_5: sample, hledano: q||null, nalezeno: searchResult });
 });
 
+app.get('/debug-kat', (req, res) => {
+  const kat = req.query.kat || 'Notebooky';
+  const matched = products.filter(p => (p.kategorie||'').startsWith(kat));
+  res.json({ kat, pocet: matched.length, prvnich_10: matched.slice(0,10).map(p => ({ nazev: p.nazev, kategorie: p.kategorie, cena: p.cena })) });
+});
+
 app.get('/debug-phones', (req, res) => {
   const q = req.query.q || 'Samsung';
   const phones = products.filter(p => p.kategorie && p.kategorie.includes('Telefony | Mobiln'));
