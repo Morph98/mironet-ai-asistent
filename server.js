@@ -226,8 +226,11 @@ function search(query, max) {
   }
 
   const kws = q.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
-  const bm = q.match(/(\d+)\s*(kc|czk|tisic|tis\b|k\b)/);
-  const budget = bm ? parseFloat(bm[1]) * (/tis|k\b/.test(bm[2]) ? 1000 : 1) : null;
+  // Budget parsing - zachytit "10 000 Kč", "10000 Kč", "10 tisíc"
+  const bmRaw = q.match(/(\d[\d\s]{0,8})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?|k\b)/i);
+  const budget = bmRaw
+    ? parseFloat(bmRaw[1].replace(/\s/g,'')) * (/tis|k\b/i.test(bmRaw[2]) && !/kc|kč/i.test(bmRaw[2]) ? 1000 : 1)
+    : null;
 
   let pool = products;
   if (catFilter.length > 0) {
