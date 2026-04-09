@@ -1853,6 +1853,8 @@ PRAVIDLA:
 - CENOVA DIVERZITA: Pokud mas produkty v ruznych cenach, VZDYCKY vyber mix - aspon jeden levny, jeden stredni, jeden drahy. NIKDY nevybírej jen nejlevnejsi!
 - NEJLEPSI/NEJDRAZSI: Pokud zakaznik chce "nejlepsi", "nejdrazsi", "premium", "top", "na cene nezalezi" - vyber produkty s NEJVYSSI cenou ze seznamu!
 - NEJLEVNEJSI: Pokud zakaznik chce "nejlevnejsi", "nejake", "do rozpoctu" - vyber produkty s NEJNIZSI cenou.
+- POCET PRODUKTU: Vzdycky doporuc 3-5 produktu pokud jsou dostupne. NIKDY nedoporucuj jen 1 produkt pokud mas na vyber vic. Zakaznik chce vidět moznosti!
+- KONKRETNI ZNACKA: Pokud zakaznik chce konkretni znacku (samsung, apple, xiaomi...) a mas vice produktu te znacky, doporuc 3-5 z nich v ruznych cenach.
 - Na KONEC odpovedi vzdy pridej tag s indexy produktu ktere doporucujes (na novy radek): INDEXY:[0,2,4]
 - Pokud zadny produkt nedoporuces, napsat INDEXY:[]
 - Max 4-5 vet${katalog}`;
@@ -1889,7 +1891,10 @@ app.post('/chat', requireAuth, async (req, res) => {
 
   // Detekce kontextových slov - dotazy navazující na předchozí konverzaci
   const KONTEXTOVY = /lev[nň]|dra[žh]|nejlep|nejhor|nejdra|nejlev|jin[ýá]|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn|nejv[ýy]kon|premium|top model|flagship|bez omezen|cena nezále|nezále.*cen|co nejlep|co nejdra|herní verz|pracovní verz|s wifi|bez wifi|více m\.2|více slotů|chtěl bych|chci vidět|chci něco|chceš mi|ukaž mi|dej mi|co máš|co mate|co mám|jaké máš|jaké mate|máš něco|mate něco|doporuč mi|doporuč něco/i;
-  const jeKontextovy = KONTEXTOVY.test(userMessage) || userMessage.trim().length < 25;
+
+  // Výjimka: pokud dotaz obsahuje konkrétní značku nebo budget, není kontextový
+  const KONKRETNI = /samsung|apple|xiaomi|iphone|huawei|motorola|lenovo|hp|dell|asus|acer|sony|lg|nokia|google|pixel|oneplus|honor|realme|\d+\s*(kc|kč|czk|tis)/i;
+  const jeKontextovy = KONTEXTOVY.test(userMessage) && !KONKRETNI.test(userMessage) || userMessage.trim().length < 25 && !KONKRETNI.test(userMessage);
 
   // Smart search: primárně hledej podle samotného userMessage
   let found = [];
