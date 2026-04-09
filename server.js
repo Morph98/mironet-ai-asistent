@@ -1902,6 +1902,7 @@ app.post('/chat', requireAuth, async (req, res) => {
   if (!jeServisni) {
     found = search(userMessage);
     console.log('Search "' + userMessage.substring(0,40) + '" → ' + found.length + ' výsledků, jeKontextovy=' + jeKontextovy);
+    if (found.length > 0) console.log('  První výsledek: ' + found[0].nazev.substring(0,50) + ' | ' + found[0].kategorie.split(' | ')[0]);
 
     // Fallback pro kontextové dotazy nebo prázdné výsledky
     const prevUserMsgs = messages.filter(m => m.role === 'user');
