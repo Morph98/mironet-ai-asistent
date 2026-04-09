@@ -262,7 +262,15 @@ const SYNONYMS = {
   'nvme':          ['nvme','ssd','m.2'],
   'hdd':           ['hdd','pevny disk','harddisk'],
   'disk':          ['disk','ssd','hdd','nvme','uloziste'],
-  'zakladni':      ['zakladni deska','motherboard'],
+  'zakladni':      ['zakladni deska','motherboard','socket'],
+  'motherboard':   ['motherboard','zakladni deska','socket'],
+  'socket':        ['socket','zakladni deska','am4','am5','lga'],
+  'am4':           ['am4','zakladni deska','ryzen'],
+  'am5':           ['am5','zakladni deska','ryzen'],
+  'lga1700':       ['lga1700','zakladni deska','intel'],
+  'lga1200':       ['lga1200','zakladni deska','intel'],
+  'kompatibilni':  ['zakladni deska','kompatibilni','motherboard'],
+  'pro procesor':  ['zakladni deska','motherboard'],
   'skrin':         ['skrin','case','tower','midi'],
   'zdroj':         ['zdroj','psu','napajeni'],
   'chlazeni':      ['chlazeni','chladic','ventilátor','fan','aio'],
@@ -449,8 +457,77 @@ const SYNONYMS = {
   'sekacka':       ['sekacka','lawn mower','robotická sekačka','husqvarna'],
   'gril':          ['gril','bbq','grilovani','zahradni gril','weber'],
   'zahradni':      ['zahradni','garden','plot','trávník'],
-  // === E-ČTEČKY ===
-  'ctecka':        ['ctecka knih','ebook','kindle','reader','e-ink'],
+  // === PŘÍSLUŠENSTVÍ — vztahové dotazy pro všechny kategorie ===
+  'pouzdro':       ['pouzdro','obal','kryt','case','prislusenstvi pro mobilni telefony','prislusenstvi pro tablety'],
+  'obal':          ['obal','pouzdro','kryt','case','prislusenstvi pro mobilni telefony'],
+  'kryt':          ['kryt','pouzdro','obal','case'],
+  'sklo':          ['ochranne sklo','tempered glass','folie','prislusenstvi pro mobilni'],
+  'folie':         ['folie','ochranne sklo','screen protector'],
+  'reminek':       ['reminek','band','prislusenstvi pro nositelnou elektroniku'],
+  'dokovaci':      ['dokovaci stanice','dock','hub','prislusenstvi pro notebooky'],
+  'hub':           ['hub','dokovaci stanice','usb hub','prislusenstvi'],
+  'brasna':        ['brasna','batoh','taska','pouzdro','prislusenstvi pro notebooky'],
+  'batoh':         ['batoh','brasna','taska','sport a kemping'],
+  'dalkovy':       ['dalkovy ovladac','remote','prislusenstvi pro tv'],
+  'ovladac':       ['ovladac','dalkovy ovladac','remote','gamepad'],
+  'lampa':         ['lampa','zarovka','prislusenstvi pro projektory'],
+  'nastenny':      ['nastenny drzak','wall mount','prislusenstvi pro tv','prislusenstvi pro monitory'],
+  'cisticka':      ['cistici prostredky','cistici sada','cleaning kit','spotrebni material'],
+  'filament':      ['filament','tiskova struna','3d tisk','tiskove struny'],
+  // === SPOTŘEBNÍ MATERIÁL — tiskárny ===
+  'toner':         ['toner','laserovy toner','spotrebni material pro tiskarny'],
+  'cartridge':     ['cartridge','inkoustova napl','spotrebni material pro tiskarny'],
+  'naplna':        ['napl','toner','cartridge','spotrebni material pro tiskarny'],
+  'kazeta':        ['kazeta','cartridge','toner'],
+  'inkoust':       ['inkoust','cartridge','inkoustova napl'],
+  'papir':         ['papir','a4','papir a role pro tiskarny','spotrebni material'],
+  // === NÁHRADNÍ DÍLY ===
+  'nahradni':      ['nahradni dily','nahradni dil','spare parts','nahradni dily'],
+  'displej':       ['displej','display pro mobily','lcd display','nahradni dily'],
+  // === KOMPONENTY — vztahové dotazy ===
+  'zakladni':      ['zakladni deska','motherboard','socket'],
+  'motherboard':   ['motherboard','zakladni deska','socket'],
+  'socket':        ['socket','zakladni deska','am4','am5','lga'],
+  'am4':           ['am4','zakladni deska','ryzen'],
+  'am5':           ['am5','zakladni deska','ryzen'],
+  'lga1700':       ['lga1700','zakladni deska','intel'],
+  'lga1200':       ['lga1200','zakladni deska','intel'],
+  'kompatibilni':  ['zakladni deska','kompatibilni','motherboard'],
+  // === AUTO-MOTO — vztahové dotazy ===
+  'drzak':         ['drzak','holder','mount','stojan','prislusenstvi pro mobilni telefony','auto-moto'],
+  'autonabijec':   ['nabijec do auta','car charger','auto-moto elektricke doplnky'],
+  'olej':          ['olej','motorovy olej','oleje a maziva'],
+  'steras':        ['steras','wiper','auto-moto'],
+  'autobaterie':   ['autobaterie','startovaci box','auto-moto autobaterie'],
+  'zimni':         ['zimni pneu','zimni vybava','auto-moto zimni'],
+  // === SPORT — vztahové dotazy ===
+  'helma':         ['helma','prilba','cyklistika','sport'],
+  'cyklistika':    ['cyklistika','kolo','prilba','sport a kemping'],
+  'rybareni':      ['rybarstvi','rybareni','rybarske potreby'],
+  'trampolina':    ['trampolina','trampoliny a prislusenstvi'],
+  // === ZAHRADA — vztahové dotazy ===
+  'retezec':       ['retez','retezova pila','zahradni technika'],
+  'strunova':      ['strunova sekacka','krovinorez','zahradni technika'],
+  'hadice':        ['zahradni hadice','zavlazovani','zahrada'],
+  'hnojivo':       ['hnojivo','zahradnicke potreby'],
+  // === DOMÁCÍ POTŘEBY — vztahové dotazy ===
+  'poklice':       ['poklice','viko','hrnce','domaci potreby'],
+  'grilovaci':     ['grilovaci','panev','prislusenstvi','zahrada'],
+  // === KANCELÁŘ — vztahové dotazy ===
+  'etiketa':       ['etiketa','stitek','tiskarna stitku','spotrebni material'],
+  'trezor':        ['trezor','bezpecnostni schranka','kancelar'],
+  // === ZDRAVÍ — vztahové dotazy ===
+  'kartacek':      ['elektricky kartacek','sonic','oral-b','krasaa zdravi'],
+  'epilator':      ['epilator','depilator','krasa a zdravi'],
+  // === CHOVATELSKÉ — vztahové dotazy ===
+  'krmivo':        ['krmivo','chovatelske potreby','pes','kocka'],
+  'akvarium':      ['akvarium','akvaristika','chovatelske potreby'],
+  // === HRAČKY — vztahové dotazy ===
+  'stavebnice':    ['stavebnice','lego','hracky'],
+  'puzzle':        ['puzzle','hracky'],
+  // === POKLADNY — vztahové dotazy ===
+  'cteckabarkodu': ['ctecka carovych kodu','pokladni system','pokladni a evidencni'],
+  'pokladnizasuvka': ['pokladni zasuvky','pokladni a evidencni'],
   'kindle':        ['kindle','ctecka','amazon','ebook'],
   // === ČTEČKY KARET / POKLADNY ===
   'pokladna':      ['pokladna','pos','pokladni system','registracni'],
@@ -676,7 +753,7 @@ const CAT_RULES = [
     must: ['Komponenty | SSD'] },
   { words: ['hdd','pevný disk','harddisk'],
     must: ['Komponenty | HDD'] },
-  { words: ['základní deska','motherboard'],
+  { words: ['základní deska','motherboard','socket am4','socket am5','lga1700','lga1200','deska pro'],
     must: ['Komponenty | Základní desky'] },
   { words: ['počítačová skříň','pc skříň','midi tower'],
     must: ['Komponenty | Skříně'] },
@@ -889,17 +966,238 @@ const CAT_RULES = [
   { words: ['windows 11','operační systém'],
     must: ['Software | Operační systémy'] },
 
+  // === PŘÍSLUŠENSTVÍ PRO KONKRÉTNÍ ZAŘÍZENÍ ===
+  { words: ['pouzdro','obal','kryt','sklo','fólie','příslušenství pro telefon','příslušenství pro mobil'],
+    must: ['Příslušenství | Příslušenství pro mobilní telefony'] },
+  { words: ['pouzdro na tablet','obal na tablet','klávesnice pro tablet','pero pro tablet'],
+    must: ['Příslušenství | Příslušenství pro tablety'] },
+  { words: ['brašna na notebook','batoh na notebook','chladič notebooku','dokovací stanice','příslušenství pro notebook'],
+    must: ['Příslušenství | Příslušenství pro notebooky'] },
+  { words: ['příslušenství pro monitor','stojan na monitor','arm na monitor','nástěnný držák monitoru'],
+    must: ['Příslušenství | Příslušenství pro monitory'] },
+  { words: ['příslušenství pro tv','držák na televizor','nástěnný držák televize'],
+    must: ['Příslušenství | Příslušenství pro TV'] },
+  { words: ['příslušenství pro projektor','plátno','projekční plátno','lampa do projektoru'],
+    must: ['Příslušenství | Příslušenství pro projektory'] },
+  { words: ['příslušenství pro sluchátka','náhradní polštářky','kabel ke sluchátkům'],
+    must: ['Příslušenství | Příslušenství pro sluchátka a Bluetooth'] },
+  { words: ['příslušenství pro hodinky','řemínek','band pro smartwatch'],
+    must: ['Příslušenství | Příslušenství pro nositelnou elektroniku'] },
+  { words: ['příslušenství pro gps','držák navigace','mapa garmin'],
+    must: ['Příslušenství | Příslušenství pro GPS'] },
+  { words: ['příslušenství pro čtečku','obal na čtečku','příslušenství pro kindle'],
+    must: ['Příslušenství | Příslušenství pro čtečky knih'] },
+  // === SPOTŘEBNÍ MATERIÁL — výrobci tiskáren ===
+  { words: ['toner hp','cartridge hp','náplň hp','ink hp'],
+    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
+  { words: ['toner canon','cartridge canon','náplň canon'],
+    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
+  { words: ['toner epson','cartridge epson','náplň epson'],
+    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
+  { words: ['toner brother','cartridge brother'],
+    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
+  { words: ['toner samsung','toner xerox','toner lexmark','toner kyocera','toner oki'],
+    must: ['Spotřební materiál | Spotřební materiál pro tiskárny'] },
+  { words: ['papír a4','kancelářský papír','papír do tiskárny','role pro pokladnu'],
+    must: ['Spotřební materiál | Papír a role pro tiskárny'] },
+  { words: ['filament','tisková struna','pla filament','abs filament','petg'],
+    must: ['Spotřební materiál | Tiskové struny (Filament)'] },
+  // === NÁHRADNÍ DÍLY ===
+  { words: ['náhradní díl','displej pro telefon','display pro mobil','sklo pro iphone','sklo pro samsung'],
+    must: ['Náhradní díly | Náhradní díly pro telefony'] },
+  { words: ['náhradní díl pro notebook','lcd display notebook','displej pro notebook'],
+    must: ['Náhradní díly | LCD Display pro notebook'] },
+  { words: ['náhradní díl pro tablet'],
+    must: ['Náhradní díly | Náhradní díly pro tablety'] },
+  // === KOMPONENTY — vztahové dotazy ===
+  { words: ['základní deska pro ryzen','základní deska am4','základní deska am5','základní deska socket'],
+    must: ['Komponenty | Základní desky'] },
+  { words: ['základní deska pro intel','základní deska lga','základní deska lga1700'],
+    must: ['Komponenty | Základní desky'] },
+  { words: ['chlazení procesoru','cpu chladič','vodní chlazení','aio chlazení','ventilátor do pc'],
+    must: ['Komponenty | Chlazení'] },
+  { words: ['osvětlení pc','rgb páska','led páska do pc','rgb fan'],
+    must: ['Komponenty | Osvětlení - LED, RGB, D-RGB'] },
+  // === AUTO-MOTO — vztahové dotazy ===
+  { words: ['autobaterie','startovací box','jump starter'],
+    must: ['Auto-moto | Autobaterie'] },
+  { words: ['olej do motoru','motorový olej','olej 5w40','olej 5w30'],
+    must: ['Auto-moto | Oleje a maziva'] },
+  { words: ['stěrač','stěrače','autostěrač'],
+    must: ['Auto-moto | Stěrače'] },
+  { words: ['zimní vybavení do auta','škrabka','lopata do auta','sněhové řetězy'],
+    must: ['Auto-moto | Zimní výbava'] },
+  { words: ['vůně do auta','osvěžovač vzduchu do auta','parfémy do auta'],
+    must: ['Auto-moto | Vůně a parfémy do auta'] },
+  { words: ['střešní box','nosič kol','nosič lyží','příčníky'],
+    must: ['Auto-moto | Střešní boxy a nosiče'] },
+  { words: ['kamera do auta','dashcam','autokamera'],
+    must: ['Kamery | Kamery do auta'] },
+  // === SPORT — vztahové dotazy ===
+  { words: ['rybářský prut','rybářský vlasec','rybářské potřeby','rybářský háček'],
+    must: ['Sport a kemping | Rybářské potřeby'] },
+  { words: ['cyklistická helma','cyklistické oblečení','cyklistický batoh'],
+    must: ['Sport a kemping | Cyklistika'] },
+  { words: ['trampolína','trampolíny','trampolin'],
+    must: ['Sport a kemping | Trampolíny a příslušenství'] },
+  { words: ['plavání','vodní sport','šnorchl','ploutve'],
+    must: ['Sport a kemping | Vodní sporty'] },
+  // === ZDRAVÍ — vztahové dotazy ===
+  { words: ['elektrický kartáček','elektrický zubní kartáček','oral-b','sonic zubní'],
+    must: ['Krása a zdraví | Zdraví a zdravotnické přístroje'] },
+  { words: ['depilator','epilátor','holicí strojek'],
+    must: ['Krása a zdraví | Zdraví'] },
+  { words: ['doplněk stravy','vitamíny','protein','sportovní výživa'],
+    must: ['Krása a zdraví | Doplňky stravy','Krása a zdraví | Sportovní výživa'] },
+  // === POKLADNÍ SYSTÉMY — vztahové dotazy ===
+  { words: ['čtečka čárových kódů','scanner kódů','barcode reader'],
+    must: ['Pokladní a evidenční systémy | Čtečky čárových kódů'] },
+  { words: ['pokladní zásuvka','finanční zásuvka'],
+    must: ['Pokladní a evidenční systémy | Pokladní zásuvky'] },
+  { words: ['zákaznický displej','display pro pokladnu'],
+    must: ['Pokladní a evidenční systémy | Zákaznické displeje'] },
+  { words: ['rfid čtečka','rfid čip'],
+    must: ['Pokladní a evidenční systémy | Čtečky karet RFID'] },
+  // === ZAHRADA — vztahové dotazy ===
+  { words: ['zahradní hadice','zavlažování','postřikovač','zahradní nádrž'],
+    must: ['Zahrada | Zavlažování'] },
+  { words: ['zahradní nábytek','zahradní stůl','zahradní židle','zahradní lavice'],
+    must: ['Zahrada | Zahradní nábytek'] },
+  { words: ['bazén','vířivka','sauna','zahradní bazén'],
+    must: ['Zahrada | Bazény, vířivky a sauny'] },
+  // === DOMÁCÍ POTŘEBY — vztahové dotazy ===
+  { words: ['tlakový hrnec','parní hrnec'],
+    must: ['Domácí potřeby | Tlakové hrnce'] },
+  { words: ['zapékací forma','pečící forma','plech na pečení'],
+    must: ['Domácí potřeby | Zapékací formy'] },
+  { words: ['kuchyňské nože','sada nožů','japonský nůž','šéfkuchařský nůž'],
+    must: ['Domácí potřeby | Kuchyňské nože'] },
   // === POKLADNÍ SYSTÉMY ===
   { words: ['pokladna','pos systém','registrační pokladna','eet'],
     must: ['Pokladní a evidenční systémy | '] },
 ];
 
+// ============================================================
+// VZTAHOVÝ PREPROCESOR DOTAZU
+// Rozpozná vzory "X pro Y", "X k Y", "X kompatibilní s Y"
+// a doplní správné klíčové slovo pro vyhledávání
+// ============================================================
 
+// Mapování produktů/zařízení → kategorie příslušenství
+const DEVICE_TO_ACCESSORY = {
+  // Telefony → příslušenství pro telefony
+  'iphone':       ['pouzdro','obal','kryt','nabíječka','kabel','sklo','folie','držák','powerbank','příslušenství pro mobilní telefony'],
+  'samsung':      ['pouzdro','obal','kryt','nabíječka','kabel','sklo','příslušenství pro mobilní telefony'],
+  'xiaomi':       ['pouzdro','obal','kryt','nabíječka','příslušenství pro mobilní telefony'],
+  'huawei':       ['pouzdro','obal','kryt','příslušenství pro mobilní telefony'],
+  'mobil':        ['pouzdro','obal','nabíječka','kabel','příslušenství pro mobilní telefony'],
+  'telefon':      ['pouzdro','obal','nabíječka','kabel','příslušenství pro mobilní telefony'],
+  // Notebooky → příslušenství pro notebooky
+  'notebook':     ['brašna','baterie','adaptér','nabíječka','chladič','dokovací stanice','příslušenství pro notebooky'],
+  'laptop':       ['brašna','baterie','adaptér','nabíječka','příslušenství pro notebooky'],
+  'macbook':      ['brašna','pouzdro','adaptér','příslušenství pro notebooky'],
+  // Tablety → příslušenství pro tablety
+  'tablet':       ['pouzdro','klávesnice','pero','příslušenství pro tablety'],
+  'ipad':         ['pouzdro','klávesnice','apple pencil','příslušenství pro tablety'],
+  // Tiskárny → spotřební materiál
+  'tiskárna':     ['toner','cartridge','náplň','papír','spotřební materiál pro tiskárny'],
+  'tiskarna':     ['toner','cartridge','náplň','spotřební materiál pro tiskárny'],
+  'hp':           ['toner','cartridge','náplň','spotřební materiál pro tiskárny'],
+  'canon':        ['cartridge','náplň','spotřební materiál pro tiskárny'],
+  'epson':        ['cartridge','náplň','spotřební materiál pro tiskárny'],
+  'brother':      ['toner','cartridge','spotřební materiál pro tiskárny'],
+  'lexmark':      ['toner','spotřební materiál pro tiskárny'],
+  'laserjet':     ['toner','spotřební materiál pro tiskárny'],
+  'officejet':    ['cartridge','spotřební materiál pro tiskárny'],
+  // Procesory → základní desky
+  'ryzen':        ['základní deska','motherboard','socket am4','socket am5'],
+  'intel':        ['základní deska','motherboard','lga1700','lga1200'],
+  'core i':       ['základní deska','motherboard'],
+  'amd':          ['základní deska','grafická karta'],
+  // Monitory → příslušenství pro monitory
+  'monitor':      ['stojan','arm','kabel hdmi','displayport','příslušenství pro monitory'],
+  // Sluchátka → příslušenství pro sluchátka
+  'sluchátka':    ['náhradní polštářky','kabel','příslušenství pro sluchátka'],
+  'headset':      ['náhradní díly','příslušenství pro sluchátka'],
+  // Fotoaparát → příslušenství foto
+  'fotoaparát':   ['objektiv','baterie','paměťová karta','brašna','příslušenství foto'],
+  'fotak':        ['objektiv','baterie','paměťová karta','příslušenství foto'],
+  // Auto → auto-moto příslušenství
+  'auto':         ['držák','nabíječka','dashcam','autokosmetika','auto-moto'],
+  'auta':         ['příslušenství','auto-moto'],
+  // TV → příslušenství pro TV
+  'televize':     ['dálkový ovladač','nástěnný držák','příslušenství pro tv'],
+  'televizor':    ['dálkový ovladač','držák','příslušenství pro tv'],
+  // Projektor → příslušenství pro projektory
+  'projektor':    ['plátno','lampa','příslušenství pro projektory'],
+  // GPS → příslušenství pro GPS
+  'garmin':       ['mapa','držák','příslušenství pro gps'],
+  'navigace':     ['držák','nabíječka','příslušenství pro gps'],
+  // Chytré hodinky → příslušenství
+  'hodinky':      ['řemínek','nabíječka','příslušenství pro nositelnou elektroniku'],
+  'smartwatch':   ['řemínek','nabíječka','příslušenství pro nositelnou elektroniku'],
+  // Kamera → příslušenství
+  'kamera':       ['baterie','paměťová karta','stativ','příslušenství foto video'],
+  'gopro':        ['mount','baterie','příslušenství'],
+  // PC → příslušenství pro počítače
+  'pc':           ['příslušenství pro počítače','klávesnice','myš'],
+  'počítač':      ['příslušenství pro počítače','klávesnice','myš'],
+};
+
+// Vzory vztahových dotazů
+const RELATION_PATTERNS = [
+  // "toner pro HP LaserJet 1200" → hledej toner + HP LaserJet
+  { re: /^(.+?)\s+(?:pro|k|ke|do|na|kompatibiln[íi]\s+s?|pro\s+(?:tiskárnu|printer|zařízení))\s+(.+)$/i, fn: (m) => m[1] + ' ' + m[2] },
+  // "pouzdro na iPhone 16" → pouzdro + iPhone
+  { re: /^(.+?)\s+(?:na|pro|k)\s+(.+)$/i, fn: (m) => m[1] + ' ' + m[2] },
+  // "náhradní díl pro Lenovo IdeaPad" → náhradní díl + Lenovo
+  { re: /^náhradní\s+díl\s+(?:pro|k)\s+(.+)$/i, fn: (m) => 'náhradní díly ' + m[1] },
+  // "základní deska pro Ryzen 5 5600X" → základní deska + AM4
+  { re: /základní\s+desk[au]\s+(?:pro|s|socket)?\s*(?:ryzen|amd)/i, fn: () => 'základní deska AM4 socket' },
+  { re: /základní\s+desk[au]\s+(?:pro|s|socket)?\s*(?:intel|core|i[3579])/i, fn: () => 'základní deska LGA intel' },
+  // "baterie do notebooku Lenovo" → baterie notebook Lenovo
+  { re: /bater(?:ie|ii)\s+(?:do|pro|k)\s+(?:notebooku?|laptopu?)\s*(.*)$/i, fn: (m) => 'baterie notebook ' + (m[1]||'') },
+  // "adaptér pro notebook Dell" → adaptér notebook Dell
+  { re: /adapt[eé]r\s+(?:pro|k|do)\s+(.+)$/i, fn: (m) => 'adaptér ' + m[1] },
+];
+
+// Preprocesor: transformuje dotaz pro lepší výsledky search
+function preprocessQuery(query) {
+  const q = query.trim();
+
+  // Zkus vztahové vzory
+  for (const pat of RELATION_PATTERNS) {
+    const m = q.match(pat.re);
+    if (m) {
+      const transformed = pat.fn(m);
+      if (transformed && transformed !== q) return transformed;
+    }
+  }
+
+  // Zkus device→accessory mapování
+  // Vzor: "[příslušenství] pro/na/k [zařízení]" nebo "[zařízení] [příslušenství]"
+  const qn = norm(q);
+  for (const [device, accessories] of Object.entries(DEVICE_TO_ACCESSORY)) {
+    if (qn.includes(norm(device))) {
+      // Pokud dotaz obsahuje zařízení, přidej kontext kategorií příslušenství
+      // ale jen pokud dotaz vypadá jako příslušenství (obsahuje "pro", "k", "na", "obal", "kabel"...)
+      const ACCESSORY_HINTS = ['pro','pouzdro','obal','kabel','nabíječka','baterie','toner','cartridge','náplň','příslušenství','náhradní','kompatibilní','držák','adaptér','stojan','kryt','sklo','folie'];
+      const isAccessoryQuery = ACCESSORY_HINTS.some(h => qn.includes(h));
+      if (isAccessoryQuery) {
+        // Přidej první accessory klíčové slovo jako hint
+        return q + ' ' + accessories[0];
+      }
+    }
+  }
+
+  return q; // Beze změny
+}
 
 function search(query, max) {
   max = max || 30;
   if (products.length === 0) return [];
-  const q = norm(query);
+  const processedQuery = preprocessQuery(query);
+  const q = norm(processedQuery);
 
   // Tokenizace a rozšíření synonymy
   const originalTokens = tokenize(q);
@@ -1041,8 +1339,23 @@ app.post('/chat', requireAuth, async (req, res) => {
   const recent = messages.slice(-5).map(m => m.content).join(' ');
   const jeServisni = SERVISNI.test(userMessage) || SERVISNI.test(recent);
 
-  const ctx = messages.slice(-3).map(m => m.content).join(' ') + ' ' + userMessage;
-  const found = jeServisni ? [] : search(ctx);
+  // Detekce kontextových slov - dotazy jako "levnější", "jiný", "ukáž víc"
+  const KONTEXTOVY = /^(lev[nň]|dra[žh]|jin[ýá]|víc|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn)/i;
+  const jeKontextovy = KONTEXTOVY.test(userMessage.trim()) || userMessage.trim().length < 15;
+
+  // Smart search: primárně hledej podle samotného userMessage
+  // Pokud nenajde nic NEBO je dotaz kontextový, zkus s kontextem posledního user dotazu
+  let found = [];
+  if (!jeServisni) {
+    found = search(userMessage);
+    // Fallback 1: pokud nic nenašlo nebo kontextový dotaz → přidej kontext posledního user dotazu
+    if (found.length === 0 || jeKontextovy) {
+      const lastUserMsg = messages.filter(m => m.role === 'user').slice(-1).map(m => m.content).join(' ');
+      const ctxQuery = lastUserMsg ? lastUserMsg + ' ' + userMessage : userMessage;
+      const ctxFound = search(ctxQuery);
+      if (ctxFound.length > found.length) found = ctxFound;
+    }
+  }
   const history = [...messages, { role: 'user', content: userMessage }];
 
   try {
