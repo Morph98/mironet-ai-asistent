@@ -1875,8 +1875,8 @@ PRAVIDLA:
 - Max 4-5 vet${katalog}`;
 }
 
-// Claude API
-function callClaude(messages, systemText) {
+// Claude API s retry logikou pro Overloaded
+function callClaude(messages, systemText, retries = 3) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ model: CONFIG.MODEL, max_tokens: 800, system: systemText, messages });
     const req = https.request({
@@ -1886,8 +1886,20 @@ function callClaude(messages, systemText) {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => {
-        try { const d = JSON.parse(data); if (d.error) return reject(new Error(d.error.message)); resolve(d?.content?.[0]?.text || 'Nastala chyba.'); }
-        catch(e) { reject(e); }
+        try {
+          const d = JSON.parse(data);
+          if (d.error) {
+            const isOverloaded = d.error.type === 'overloaded_error' || (d.error.message || '').toLowerCase().includes('overload');
+            if (isOverloaded && retries > 0) {
+              const delay = (4 - retries) * 3000; // 3s, 6s, 9s
+              console.log('Overloaded, retry za ' + delay + 'ms (' + retries + ' zbývá)');
+              setTimeout(() => callClaude(messages, systemText, retries - 1).then(resolve).catch(reject), delay);
+              return;
+            }
+            return reject(new Error(d.error.message));
+          }
+          resolve(d?.content?.[0]?.text || 'Nastala chyba.');
+        } catch(e) { reject(e); }
       });
     });
     req.on('error', reject); req.write(body); req.end();
