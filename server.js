@@ -1375,6 +1375,8 @@ PRAVIDLA:
 - NIKDY nepis URL adresy do textu odpovedi
 - Produkty jsou zakaznikovi zobrazeny v kartach pod textem - nemusis je popisovat detailne
 - CENOVA DIVERZITA: Pokud mas produkty v ruznych cenach, VZDYCKY vyber mix - aspon jeden levny, jeden stredni, jeden drahy. NIKDY nevybírej jen nejlevnejsi!
+- NEJLEPSI/NEJDRAZSI: Pokud zakaznik chce "nejlepsi", "nejdrazsi", "premium", "top", "na cene nezalezi" - vyber produkty s NEJVYSSI cenou ze seznamu!
+- NEJLEVNEJSI: Pokud zakaznik chce "nejlevnejsi", "nejake", "do rozpoctu" - vyber produkty s NEJNIZSI cenou.
 - Na KONEC odpovedi vzdy pridej tag s indexy produktu ktere doporucujes (na novy radek): INDEXY:[0,2,4]
 - Pokud zadny produkt nedoporuces, napsat INDEXY:[]
 - Max 4-5 vet${katalog}`;
@@ -1414,20 +1416,23 @@ app.post('/chat', requireAuth, async (req, res) => {
   const jeKontextovy = KONTEXTOVY.test(userMessage.trim()) || userMessage.trim().length < 20;
 
   // Smart search: primárně hledej podle samotného userMessage
-  // Pokud nenajde nic NEBO je dotaz kontextový, zkus s kontextem předchozích zpráv
   let found = [];
   if (!jeServisni) {
     found = search(userMessage);
-    // Fallback: pokud nic nenašlo nebo kontextový dotaz → přidej kontext
+
+    // Fallback pro kontextové dotazy nebo prázdné výsledky
     if (found.length === 0 || jeKontextovy) {
-      // Vezmi poslední user dotaz jako kontext
+      // Pro kontextové dotazy: použij POUZE předchozí user dotaz (ne kombinaci)
+      // "chtěl bych nejlepší" + předchozí "základní deska pro Ryzen" → search("základní deska pro Ryzen")
       const lastUserMsg = messages.filter(m => m.role === 'user').slice(-1).map(m => m.content).join(' ');
-      const ctxQuery = lastUserMsg ? lastUserMsg + ' ' + userMessage : userMessage;
-      const ctxFound = search(ctxQuery);
-      if (ctxFound.length > found.length) found = ctxFound;
+      if (lastUserMsg) {
+        const ctxFound = search(lastUserMsg);
+        if (ctxFound.length > found.length) found = ctxFound;
+      }
     }
-    // Fallback 2: pokud stále nic → zkus čistý kontext bez aktuálního dotazu
-    if (found.length === 0 && messages.length > 0) {
+
+    // Fallback 2: stále nic → zkus poslední 2 user zprávy
+    if (found.length === 0 && messages.length > 1) {
       const allUserMsgs = messages.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' ');
       if (allUserMsgs) found = search(allUserMsgs);
     }
