@@ -1416,8 +1416,8 @@ app.post('/chat', requireAuth, async (req, res) => {
   const jeServisni = SERVISNI.test(userMessage) || SERVISNI.test(recent);
 
   // Detekce kontextových slov - dotazy navazující na předchozí konverzaci
-  const KONTEXTOVY = /^(lev[nň]|dra[žh]|nejlep|nejhor|nejdra|nejlev|jin[ýá]|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn|nejv[ýy]kon|premium|top model|flagship|bez omezen|cena nezále|nezále.*cen|co nejlep|co nejdra|herní verz|pracovní verz|s wifi|bez wifi|s bluetooth|více m\.2|více slotů)/i;
-  const jeKontextovy = KONTEXTOVY.test(userMessage.trim()) || userMessage.trim().length < 20;
+  const KONTEXTOVY = /lev[nň]|dra[žh]|nejlep|nejhor|nejdra|nejlev|jin[ýá]|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn|nejv[ýy]kon|premium|top model|flagship|bez omezen|cena nezále|nezále.*cen|co nejlep|co nejdra|herní verz|pracovní verz|s wifi|bez wifi|více m\.2|více slotů|chtěl bych|chci vidět|chci něco|chceš mi|ukaž mi|dej mi|co máš|co mate|co mám|jaké máš|jaké mate|máš něco|mate něco|doporuč mi|doporuč něco/i;
+  const jeKontextovy = KONTEXTOVY.test(userMessage) || userMessage.trim().length < 25;
 
   // Smart search: primárně hledej podle samotného userMessage
   let found = [];
@@ -1427,11 +1427,9 @@ app.post('/chat', requireAuth, async (req, res) => {
     console.log('Search "' + userMessage.substring(0,40) + '" → ' + found.length + ' výsledků, jeKontextovy=' + jeKontextovy);
 
     // Fallback pro kontextové dotazy nebo prázdné výsledky
+    const prevUserMsgs = messages.filter(m => m.role === 'user');
     if (found.length === 0 || jeKontextovy) {
-      // Vezmi předchozí user zprávy (ne aktuální) jako kontext
-      const prevUserMsgs = messages.filter(m => m.role === 'user');
       console.log('Fallback: ' + prevUserMsgs.length + ' předchozích user zpráv');
-      // Zkus poslední předchozí dotaz
       for (let i = prevUserMsgs.length - 1; i >= 0; i--) {
         const ctxFound = search(prevUserMsgs[i].content);
         console.log('  Zkouším: "' + prevUserMsgs[i].content.substring(0,40) + '" → ' + ctxFound.length);
@@ -1439,6 +1437,19 @@ app.post('/chat', requireAuth, async (req, res) => {
           found = ctxFound;
           jeKontextovySearch = true;
           break;
+        }
+      }
+    } else if (found.length > 0 && prevUserMsgs.length > 0) {
+      // Kontrola relevance: pokud aktuální výsledky jsou z jiné top-kategorie než předchozí dotaz,
+      // použij raději předchozí dotaz (zabrání situaci "chtěl bych nejlepší" → vrátí random produkty)
+      const prevFound = search(prevUserMsgs[prevUserMsgs.length - 1].content);
+      if (prevFound.length > 0) {
+        const currTopKat = found[0].kategorie.split(' | ')[0].trim();
+        const prevTopKat = prevFound[0].kategorie.split(' | ')[0].trim();
+        if (currTopKat !== prevTopKat) {
+          console.log('Kategorie se liší: "' + currTopKat + '" vs "' + prevTopKat + '" → použiji předchozí');
+          found = prevFound;
+          jeKontextovySearch = true;
         }
       }
     }
