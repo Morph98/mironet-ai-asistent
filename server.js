@@ -1374,6 +1374,7 @@ PRAVIDLA:
 - NIKDY nerikej ze Mironet neco neprodava - mozna to jen neni v tomto vyhledavani, vzdy nasmeruj na mironet.cz
 - NIKDY nepis URL adresy do textu odpovedi
 - Produkty jsou zakaznikovi zobrazeny v kartach pod textem - nemusis je popisovat detailne
+- CENOVA DIVERZITA: Pokud mas produkty v ruznych cenach, VZDYCKY vyber mix - aspon jeden levny, jeden stredni, jeden drahy. NIKDY nevybírej jen nejlevnejsi!
 - Na KONEC odpovedi vzdy pridej tag s indexy produktu ktere doporucujes (na novy radek): INDEXY:[0,2,4]
 - Pokud zadny produkt nedoporuces, napsat INDEXY:[]
 - Max 4-5 vet${katalog}`;
@@ -1538,7 +1539,7 @@ app.get('/debug-phones', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', version: '2.1', model: CONFIG.MODEL, produktu: products.length, apiKlic: !!CONFIG.ANTHROPIC_API_KEY, pobocky: CONFIG.POBOCKY.map(p => p.nazev) });
+  res.json({ status: 'ok', version: '2.2', model: CONFIG.MODEL, produktu: products.length, apiKlic: !!CONFIG.ANTHROPIC_API_KEY, pobocky: CONFIG.POBOCKY.map(p => p.nazev) });
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
