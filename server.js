@@ -1347,7 +1347,7 @@ function search(query, max) {
 }
 
 // System prompt
-function buildPrompt(found) {
+function buildPrompt(found, kontextovySearch) {
   const pobocky = CONFIG.POBOCKY.map(p => '- ' + p.nazev + ': ' + p.adresa).join('\n');
   const katalog = found.length > 0
     ? '\n\nPRODUKTY Z KATALOGU (pouze tyto existuji v nasi nabidce, zadne jine NEVYMYSLEJ):\n' +
@@ -1356,8 +1356,12 @@ function buildPrompt(found) {
       ).join('\n')
     : '\n\n(Pro tento dotaz neni produkt v katalogu - uprimne rici a nasmerovat na mironet.cz)';
 
-  return `Jsi AI asistent e-shopu Mironet.cz.
+  const kontextHint = kontextovySearch
+    ? '\nPOZOR: Produkty nize jsou z predchoziho dotazu zakaznika - zakaznik nyni upresnuje co chce (nejdrazsi, nejlepsi, jiny typ atd.). VZDYCKY z techto produktu vyber a doporuc - NIKDY nerikej ze zadne nemas!\n'
+    : '';
 
+  return `Jsi AI asistent e-shopu Mironet.cz.
+${kontextHint}
 Komunikujes cesky, pratelsky a odborne. Pises bez markdown formatovani (zadne **tucne**, zadne # nadpisy). Pis gramaticky spravne cesky.
 
 SORTIMENT Mironet.cz: elektronika, IT technika, notebooky, telefony, tablety, komponenty, site, monitory, tiskárny, audio-video, televize, fotoaparaty, kamery, chytre hodinky, GPS, herni zarizeni, spotrebice do domacnosti, zahradní technika, sport a kemping, chovatelske potreby, hracky, kancelarske potreby, auto-moto prislusenstvi, domaci potreby a dalsi.
@@ -1417,30 +1421,29 @@ app.post('/chat', requireAuth, async (req, res) => {
 
   // Smart search: primárně hledej podle samotného userMessage
   let found = [];
+  let jeKontextovySearch = false;
   if (!jeServisni) {
     found = search(userMessage);
 
     // Fallback pro kontextové dotazy nebo prázdné výsledky
     if (found.length === 0 || jeKontextovy) {
-      // Pro kontextové dotazy: použij POUZE předchozí user dotaz (ne kombinaci)
-      // "chtěl bych nejlepší" + předchozí "základní deska pro Ryzen" → search("základní deska pro Ryzen")
-      const lastUserMsg = messages.filter(m => m.role === 'user').slice(-1).map(m => m.content).join(' ');
-      if (lastUserMsg) {
-        const ctxFound = search(lastUserMsg);
-        if (ctxFound.length > found.length) found = ctxFound;
+      // Vezmi předchozí user zprávy (ne aktuální) jako kontext
+      const prevUserMsgs = messages.filter(m => m.role === 'user');
+      // Zkus poslední předchozí dotaz
+      for (let i = prevUserMsgs.length - 1; i >= 0; i--) {
+        const ctxFound = search(prevUserMsgs[i].content);
+        if (ctxFound.length > 0) {
+          found = ctxFound;
+          jeKontextovySearch = true;
+          break;
+        }
       }
-    }
-
-    // Fallback 2: stále nic → zkus poslední 2 user zprávy
-    if (found.length === 0 && messages.length > 1) {
-      const allUserMsgs = messages.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' ');
-      if (allUserMsgs) found = search(allUserMsgs);
     }
   }
   const history = [...messages, { role: 'user', content: userMessage }];
 
   try {
-    const rawReply = await callClaude(history, buildPrompt(found));
+    const rawReply = await callClaude(history, buildPrompt(found, jeKontextovySearch));
     // Parsovat indexy produktu z odpovedi (format: INDEXY:[0,2,4])
     const indexMatch = rawReply.match(/INDEXY:\s*\[([\d,\s]+)\]/);
     const reply = rawReply.replace(/\n?INDEXY:\s*\[[\d,\s]*\]\s*/g, '').trim();
