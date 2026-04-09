@@ -1409,21 +1409,27 @@ app.post('/chat', requireAuth, async (req, res) => {
   const recent = messages.slice(-5).map(m => m.content).join(' ');
   const jeServisni = SERVISNI.test(userMessage) || SERVISNI.test(recent);
 
-  // Detekce kontextových slov - dotazy jako "levnější", "jiný", "ukáž víc"
-  const KONTEXTOVY = /^(lev[nň]|dra[žh]|jin[ýá]|víc|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn)/i;
-  const jeKontextovy = KONTEXTOVY.test(userMessage.trim()) || userMessage.trim().length < 15;
+  // Detekce kontextových slov - dotazy navazující na předchozí konverzaci
+  const KONTEXTOVY = /^(lev[nň]|dra[žh]|nejlep|nejhor|nejdra|nejlev|jin[ýá]|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn|nejv[ýy]kon|premium|top model|flagship|bez omezen|cena nezále|nezále.*cen|co nejlep|co nejdra|herní verz|pracovní verz|s wifi|bez wifi|s bluetooth|více m\.2|více slotů)/i;
+  const jeKontextovy = KONTEXTOVY.test(userMessage.trim()) || userMessage.trim().length < 20;
 
   // Smart search: primárně hledej podle samotného userMessage
-  // Pokud nenajde nic NEBO je dotaz kontextový, zkus s kontextem posledního user dotazu
+  // Pokud nenajde nic NEBO je dotaz kontextový, zkus s kontextem předchozích zpráv
   let found = [];
   if (!jeServisni) {
     found = search(userMessage);
-    // Fallback 1: pokud nic nenašlo nebo kontextový dotaz → přidej kontext posledního user dotazu
+    // Fallback: pokud nic nenašlo nebo kontextový dotaz → přidej kontext
     if (found.length === 0 || jeKontextovy) {
+      // Vezmi poslední user dotaz jako kontext
       const lastUserMsg = messages.filter(m => m.role === 'user').slice(-1).map(m => m.content).join(' ');
       const ctxQuery = lastUserMsg ? lastUserMsg + ' ' + userMessage : userMessage;
       const ctxFound = search(ctxQuery);
       if (ctxFound.length > found.length) found = ctxFound;
+    }
+    // Fallback 2: pokud stále nic → zkus čistý kontext bez aktuálního dotazu
+    if (found.length === 0 && messages.length > 0) {
+      const allUserMsgs = messages.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' ');
+      if (allUserMsgs) found = search(allUserMsgs);
     }
   }
   const history = [...messages, { role: 'user', content: userMessage }];
