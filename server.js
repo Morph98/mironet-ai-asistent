@@ -1424,14 +1424,17 @@ app.post('/chat', requireAuth, async (req, res) => {
   let jeKontextovySearch = false;
   if (!jeServisni) {
     found = search(userMessage);
+    console.log('Search "' + userMessage.substring(0,40) + '" → ' + found.length + ' výsledků, jeKontextovy=' + jeKontextovy);
 
     // Fallback pro kontextové dotazy nebo prázdné výsledky
     if (found.length === 0 || jeKontextovy) {
       // Vezmi předchozí user zprávy (ne aktuální) jako kontext
       const prevUserMsgs = messages.filter(m => m.role === 'user');
+      console.log('Fallback: ' + prevUserMsgs.length + ' předchozích user zpráv');
       // Zkus poslední předchozí dotaz
       for (let i = prevUserMsgs.length - 1; i >= 0; i--) {
         const ctxFound = search(prevUserMsgs[i].content);
+        console.log('  Zkouším: "' + prevUserMsgs[i].content.substring(0,40) + '" → ' + ctxFound.length);
         if (ctxFound.length > 0) {
           found = ctxFound;
           jeKontextovySearch = true;
@@ -1439,6 +1442,7 @@ app.post('/chat', requireAuth, async (req, res) => {
         }
       }
     }
+    console.log('Finální found: ' + found.length + ', jeKontextovySearch=' + jeKontextovySearch);
   }
   const history = [...messages, { role: 'user', content: userMessage }];
 
