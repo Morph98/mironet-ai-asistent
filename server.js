@@ -1313,14 +1313,25 @@ function search(query, max) {
     const low    = sameScore.filter(x => x.p.cena <= p33);
     const mid    = sameScore.filter(x => x.p.cena > p33 && x.p.cena <= p66);
     const high   = sameScore.filter(x => x.p.cena > p66);
-    // Vezmi ~10 z každého pásma, pak doplň ostatními
-    const pick = (arr, n) => arr.filter(x => x.p.dostupnost === '0').slice(0, n)
-      .concat(arr.filter(x => x.p.dostupnost !== '0').slice(0, Math.max(0, n - arr.filter(x => x.p.dostupnost === '0').length)));
-    finalPool = [...pick(low, 10), ...pick(mid, 10), ...pick(high, 10)];
-    // Doplň zbývající pokud je méně než max
-    const usedIds = new Set(finalPool.map(x => x.p.url));
+    // Preferuj skladem, pak dostupné
+    const pick = (arr, n) => {
+      const skladem = arr.filter(x => x.p.dostupnost === '0');
+      const ostatni = arr.filter(x => x.p.dostupnost !== '0');
+      return [...skladem, ...ostatni].slice(0, n);
+    };
+    // Prokládej cenová pásma střídavě: low, high, mid, low, high, mid...
+    // Tak Claude dostane mix cen i v prvních 5 produktech
+    const maxLen = Math.max(pick(low,10).length, pick(mid,10).length, pick(high,10).length);
+    const pLow = pick(low, 10), pMid = pick(mid, 10), pHigh = pick(high, 10);
+    const interleaved = [];
+    for (let i = 0; i < maxLen; i++) {
+      if (pLow[i])  interleaved.push(pLow[i]);
+      if (pHigh[i]) interleaved.push(pHigh[i]);
+      if (pMid[i])  interleaved.push(pMid[i]);
+    }
+    const usedIds = new Set(interleaved.map(x => x.p.url));
     const rest = scored.filter(x => !usedIds.has(x.p.url));
-    finalPool = [...finalPool, ...rest].slice(0, max);
+    finalPool = [...interleaved, ...rest].slice(0, max);
   } else {
     finalPool = scored.slice(0, max);
   }
