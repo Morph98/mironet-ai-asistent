@@ -1190,7 +1190,8 @@ const CAT_RULES = [
     must: ['Příslušenství | Redukce','Příslušenství | Kabely'] },
 
   // === TELEFONY - před monitory (kvůli "displej") ===
-  { words: ['iphone','samsung galaxy','xiaomi','motorola','google pixel','oneplus','honor','realme','vivo','poco','zte'],
+  // Značky telefonů musí být PŘED příslušenstvím — jinak 'samsung' najde pouzdra místo telefonů
+  { words: ['iphone','samsung galaxy','samsung telefon','xiaomi telefon','motorola telefon','google pixel','oneplus','honor','realme','vivo','poco','zte'],
     must: ['Telefony | Mobilní telefony'] },
   { words: ['smartphone','chytrý telefon','android telefon'],
     must: ['Telefony | Mobilní telefony'] },
@@ -1903,6 +1904,29 @@ app.post('/chat', requireAuth, async (req, res) => {
     found = search(userMessage);
     console.log('Search "' + userMessage.substring(0,40) + '" → ' + found.length + ' výsledků, jeKontextovy=' + jeKontextovy);
     if (found.length > 0) console.log('  První výsledek: ' + found[0].nazev.substring(0,50) + ' | ' + found[0].kategorie.split(' | ')[0]);
+
+    // Fixup: pokud search vrátil Příslušenství ale query obsahuje značku telefonu/notebooku,
+    // zkus znovu s explicitním typem produktu
+    const PHONE_BRANDS = /\b(samsung|iphone|xiaomi|motorola|huawei|oneplus|honor|realme|pixel|nokia)\b/i;
+    const NB_BRANDS = /\b(lenovo|dell|hp|asus|acer|msi|macbook)\b/i;
+    if (found.length > 0) {
+      const topKat = found[0].kategorie.split(' | ')[0].trim();
+      if (topKat === 'Příslušenství' && PHONE_BRANDS.test(userMessage)) {
+        const fixQuery = userMessage.replace(PHONE_BRANDS, (m) => m + ' telefon');
+        const fixFound = search(fixQuery);
+        if (fixFound.length > 0 && fixFound[0].kategorie.startsWith('Telefony')) {
+          console.log('  Fixup: příslušenství→telefony');
+          found = fixFound;
+        }
+      } else if (topKat === 'Příslušenství' && NB_BRANDS.test(userMessage)) {
+        const fixQuery = userMessage.replace(NB_BRANDS, (m) => m + ' notebook');
+        const fixFound = search(fixQuery);
+        if (fixFound.length > 0 && fixFound[0].kategorie.startsWith('Notebooky')) {
+          console.log('  Fixup: příslušenství→notebooky');
+          found = fixFound;
+        }
+      }
+    }
 
     // Fallback pro kontextové dotazy nebo prázdné výsledky
     const prevUserMsgs = messages.filter(m => m.role === 'user');
