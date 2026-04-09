@@ -1902,7 +1902,8 @@ app.post('/chat', requireAuth, async (req, res) => {
     const prevUserMsgs = messages.filter(m => m.role === 'user');
     if (found.length === 0 || jeKontextovy) {
       console.log('Fallback: ' + prevUserMsgs.length + ' předchozích user zpráv');
-      for (let i = prevUserMsgs.length - 1; i >= 0; i--) {
+      // Hledej od nejstaršího dotazu (ten je nejpřesnější — není kontextový)
+      for (let i = 0; i < prevUserMsgs.length; i++) {
         const ctxFound = search(prevUserMsgs[i].content);
         console.log('  Zkouším: "' + prevUserMsgs[i].content.substring(0,40) + '" → ' + ctxFound.length);
         if (ctxFound.length > 0) {
@@ -1912,9 +1913,13 @@ app.post('/chat', requireAuth, async (req, res) => {
         }
       }
     } else if (found.length > 0 && prevUserMsgs.length > 0) {
-      // Kontrola relevance: pokud aktuální výsledky jsou z jiné top-kategorie než předchozí dotaz,
-      // použij raději předchozí dotaz (zabrání situaci "chtěl bych nejlepší" → vrátí random produkty)
-      const prevFound = search(prevUserMsgs[prevUserMsgs.length - 1].content);
+      // Kontrola relevance: porovnej s PRVNÍM smysluplným dotazem v historii
+      // (ne posledním — ten mohl být taky kontextový)
+      let prevFound = [];
+      for (let i = 0; i < prevUserMsgs.length; i++) {
+        const cf = search(prevUserMsgs[i].content);
+        if (cf.length > 0) { prevFound = cf; break; }
+      }
       if (prevFound.length > 0) {
         const currTopKat = found[0].kategorie.split(' | ')[0].trim();
         const prevTopKat = prevFound[0].kategorie.split(' | ')[0].trim();
