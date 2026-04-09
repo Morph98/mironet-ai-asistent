@@ -1838,7 +1838,11 @@ function buildPrompt(found, kontextovySearch) {
   const pobocky = CONFIG.POBOCKY.map(p => '- ' + p.nazev + ': ' + p.adresa).join('\n');
   const katalog = found.length > 0
     ? '\n\nPRODUKTY Z KATALOGU (pouze tyto existuji v nasi nabidce, zadne jine NEVYMYSLEJ):\n' +
-      found.map((p, idx) =>
+      [...found].sort((a, b) => {
+        const ca = parseFloat((a.cena||'0').replace(/\s/g,'').replace('Kc','')) || 0;
+        const cb = parseFloat((b.cena||'0').replace(/\s/g,'').replace('Kc','')) || 0;
+        return ca - cb;
+      }).map((p, idx) =>
         '[' + idx + '] ' + p.nazev + paramsToStr(parseParams(p.nazev)) + ' | ' + p.cena + ' | ' + (p.dostupnost === '0' ? 'Skladem' : 'Dostupnost: ' + p.dostupnost + ' dni')
       ).join('\n')
     : '\n\n(Pro tento dotaz neni produkt v katalogu - uprimne rici a nasmerovat na mironet.cz)';
@@ -1865,11 +1869,12 @@ PRAVIDLA:
 - NIKDY nerikej ze Mironet neco neprodava - mozna to jen neni v tomto vyhledavani, vzdy nasmeruj na mironet.cz
 - NIKDY nepis URL adresy do textu odpovedi
 - Produkty jsou zakaznikovi zobrazeny v kartach pod textem - nemusis je popisovat detailne
-- CENOVA DIVERZITA: Pokud mas produkty v ruznych cenach, VZDYCKY vyber mix - aspon jeden levny, jeden stredni, jeden drahy. NIKDY nevybírej jen nejlevnejsi!
-- NEJLEPSI/NEJDRAZSI: Pokud zakaznik chce "nejlepsi", "nejdrazsi", "premium", "top", "na cene nezalezi" - vyber produkty s NEJVYSSI cenou ze seznamu!
-- NEJLEVNEJSI: Pokud zakaznik chce "nejlevnejsi", "nejake", "do rozpoctu" - vyber produkty s NEJNIZSI cenou.
-- POCET PRODUKTU: Vzdycky doporuc 3-5 produktu pokud jsou dostupne. NIKDY nedoporucuj jen 1 produkt pokud mas na vyber vic. Zakaznik chce vidět moznosti!
-- KONKRETNI ZNACKA: Pokud zakaznik chce konkretni znacku (samsung, apple, xiaomi...) a mas vice produktu te znacky, doporuc 3-5 z nich v ruznych cenach.
+- NIKDY nenavruj zakaznikovi at vola na telefon nebo call centrum - asistent je od toho aby pomohl SAM
+- NIKDY nevymyslej produkty ktere nejsou v seznamu - nezminuj modely jako "Z Fold" nebo "S26 Ultra" pokud nejsou v seznamu nize!
+- INDEXY: Vzdycky vyber 4-5 produktu pokud jsou dostupne. Vyber produkty z RUZNYCH cenovych hladin - POVINNE zahrn nejdrazsi produkty ze seznamu!
+- CENOVA DIVERZITA: Seznam produktu je seraden od nejlevnejsiho po nejdrazsi. Vyber VZDYCKY aspon jeden z prvni tretiny (levny) a aspon jeden z posledni tretiny (drahy)!
+- NEJLEPSI/NEJDRAZSI: Pokud zakaznik chce "nejlepsi", "nejdrazsi", "premium", "top", "na cene nezalezi" - vyber produkty s co NEJVYSSI cenou ze seznamu - ty jsou na konci!
+- NEJLEVNEJSI: Pokud zakaznik chce "nejlevnejsi", "nejake", "do rozpoctu" - vyber produkty s NEJNIZSI cenou - ty jsou na zacatku.
 - Na KONEC odpovedi vzdy pridej tag s indexy produktu ktere doporucujes (na novy radek): INDEXY:[0,2,4]
 - Pokud zadny produkt nedoporuces, napsat INDEXY:[]
 - Max 4-5 vet${katalog}`;
