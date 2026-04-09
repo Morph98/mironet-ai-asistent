@@ -1711,11 +1711,25 @@ function search(query, max) {
   if (originalTokens.length === 0) return [];
 
   // Budget parsing - zachytit "10 000 Kč", "10000 Kč", "10 tisíc", ale i pouhé "do 20000" nebo "20000"
+  // Také "30 - 35 tisíc", "od 30 do 35 tisíc" = rozsah
+  const bmRange = query.match(/(\d[\d\s]{0,5})\s*[-–]\s*(\d[\d\s]{0,5})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?|tisíc)/i);
   const bmRaw = query.match(/(\d[\d\s]{0,8})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?|k\b)/i);
   const bmPlain = query.match(/\bdo\s+(\d{4,6})\b/i); // "do 20000" bez jednotky
-  const budget = bmRaw
-    ? parseFloat(bmRaw[1].replace(/\s/g,'')) * (/tis|k\b/i.test(bmRaw[2]) && !/kc|kč/i.test(bmRaw[2]) ? 1000 : 1)
-    : bmPlain ? parseFloat(bmPlain[1]) : null;
+  const bmOd = query.match(/\bod\s+(\d[\d\s]{0,8})\s*(k[cč]|czk|tis[íi][cč]?|tis\.?)/i); // "od 30 tisíc"
+
+  let budget = null;
+  let budgetMin = null;
+  if (bmRange) {
+    // Rozsah "30 - 35 tisíc" → max = 35 tisíc, min = 30 tisíc
+    const mult = /tis|k\b/i.test(bmRange[3]) && !/kc|kč/i.test(bmRange[3]) ? 1000 : 1;
+    budgetMin = parseFloat(bmRange[1].replace(/\s/g,'')) * mult;
+    budget = parseFloat(bmRange[2].replace(/\s/g,'')) * mult;
+  } else if (bmRaw) {
+    budget = parseFloat(bmRaw[1].replace(/\s/g,'')) * (/tis|k\b/i.test(bmRaw[2]) && !/kc|kč/i.test(bmRaw[2]) ? 1000 : 1);
+    if (bmOd) budgetMin = parseFloat(bmOd[1].replace(/\s/g,'')) * (/tis|k\b/i.test(bmOd[2]) && !/kc|kč/i.test(bmOd[2]) ? 1000 : 1);
+  } else if (bmPlain) {
+    budget = parseFloat(bmPlain[1]);
+  }
 
   // Odfiltrovat čistá čísla z tokenů - "20000" není klíčové slovo produktu
   const filteredTokens = originalTokens.filter(t => !/^\d+$/.test(t));
@@ -1750,7 +1764,7 @@ function search(query, max) {
 
   // Budget filtr
   if (budget && budget > 500) {
-    const bf = pool.filter(p => p.cena > 0 && p.cena <= budget * 1.1);
+    const bf = pool.filter(p => p.cena > 0 && p.cena <= budget * 1.1 && (!budgetMin || p.cena >= budgetMin * 0.9));
     if (bf.length >= 2) pool = bf;
   }
 
@@ -1894,7 +1908,7 @@ app.post('/chat', requireAuth, async (req, res) => {
   const KONTEXTOVY = /lev[nň]|dra[žh]|nejlep|nejhor|nejdra|nejlev|jin[ýá]|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn|nejv[ýy]kon|premium|top model|flagship|bez omezen|cena nezále|nezále.*cen|co nejlep|co nejdra|herní verz|pracovní verz|s wifi|bez wifi|více m\.2|více slotů|chtěl bych|chci vidět|chci něco|chceš mi|ukaž mi|dej mi|co máš|co mate|co mám|jaké máš|jaké mate|máš něco|mate něco|doporuč mi|doporuč něco/i;
 
   // Výjimka: pokud dotaz obsahuje konkrétní značku nebo budget, není kontextový
-  const KONKRETNI = /samsung|apple|xiaomi|iphone|huawei|motorola|lenovo|hp|dell|asus|acer|sony|lg|nokia|google|pixel|oneplus|honor|realme|\d+\s*(kc|kč|czk|tis)/i;
+  const KONKRETNI = /samsung|apple|xiaomi|iphone|huawei|motorola|lenovo|hp|dell|asus|acer|sony|lg|nokia|google|pixel|oneplus|honor|realme|\d+\s*(kc|kč|czk|tis)|\d+\s*[-–]\s*\d+/i;
   const jeKontextovy = KONTEXTOVY.test(userMessage) && !KONKRETNI.test(userMessage) || userMessage.trim().length < 25 && !KONKRETNI.test(userMessage);
 
   // Smart search: primárně hledej podle samotného userMessage
