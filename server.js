@@ -1489,11 +1489,16 @@ app.get('/debug-search', (req, res) => {
     cena: p.cena,
     score: scoreProduct(p, expanded, filtTokens, phrase)
   }));
+  const allResults = search(q, 30);
+  const prices = allResults.map(r => parseInt(r.cena.replace(/\s/g,'').replace('Kc',''))).filter(p => p > 0).sort((a,b) => a-b);
   res.json({
     query: q, tokens: filtTokens,
     catFilter, pool_po_cat: poolAfterCat.length, pool_po_budget: poolAfterBudget.length,
     budget,
-    search_results: results.slice(0,3),
+    search_count: allResults.length,
+    cena_min: prices[0] || 0,
+    cena_max: prices[prices.length-1] || 0,
+    search_results: allResults.slice(0,3),
     notebooky_score: scoredNb
   });
 });
