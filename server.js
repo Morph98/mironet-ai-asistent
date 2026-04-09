@@ -743,18 +743,39 @@ const CAT_RULES = [
     must: ['Monitory | '] },
 
   // === KOMPONENTY ===
-  { words: ['grafická karta','gpu','rtx','gtx','radeon','geforce'],
-    must: ['Komponenty | Grafické karty'] },
-  { words: ['procesor','cpu','ryzen','core i5','core i7','core i9','intel core'],
-    must: ['Komponenty | Procesory'] },
-  { words: ['ram','paměť ram','dimm','ddr4','ddr5','sodimm'],
-    must: ['Komponenty | Paměti RAM'] },
-  { words: ['ssd','nvme','m.2 disk'],
-    must: ['Komponenty | SSD'] },
-  { words: ['hdd','pevný disk','harddisk'],
-    must: ['Komponenty | HDD'] },
-  { words: ['základní deska','motherboard','socket am4','socket am5','lga1700','lga1200','deska pro'],
+  // Pořadí je kritické — specifické kategorie PŘED obecnými procesory/GPU
+  // Jinak "chlazení pro Ryzen", "ram pro notebook", "ssd pro PS5" matchnou špatnou kategorii
+
+  // Chlazení — před procesory ("chlazení pro Ryzen" nesmí matchnout Procesory)
+  { words: ['chlazení','cpu chladič','chladič procesoru','vodní chlazení','aio chladič','case fan','ventilátor do pc','paste'],
+    must: ['Komponenty | Chlazení'] },
+  // Základní desky — před procesory ("deska pro Ryzen" nesmí matchnout Procesory)
+  { words: ['základní deska','motherboard','socket am4','socket am5','lga1700','lga1200','deska pro','základní desku','itx deska','atx deska','matx'],
     must: ['Komponenty | Základní desky'] },
+  // Skříně — před GPU/CPU ("skříň pro RTX" nesmí matchnout GPU)
+  { words: ['pc skříň','počítačová skříň','midi tower','full tower','mini itx','mini tower','case pro pc','skříň na pc'],
+    must: ['Komponenty | Skříně'] },
+  // Zdroje — před GPU ("zdroj pro RTX 4090" nesmí matchnout GPU)
+  { words: ['pc zdroj','počítačový zdroj','psu','napájení pc','atx zdroj','modular zdroj'],
+    must: ['Komponenty | Zdroje'] },
+  // Paměti RAM — před notebooky ("ram pro notebook" nesmí matchnout Notebooky)
+  { words: ['ram','paměť ram','dimm','ddr4','ddr5','sodimm','so-dimm','operační paměť'],
+    must: ['Komponenty | Paměti RAM'] },
+  // SSD — před konzolemi, PS5 atd. ("ssd pro ps5" nesmí matchnout Konzole)
+  { words: ['ssd','nvme','m.2 disk','m.2 ssd','nvme disk','pevný ssd'],
+    must: ['Komponenty | Pevné disky a SSD'] },
+  // HDD
+  { words: ['hdd','pevný disk','harddisk','3.5 disk','2.5 disk'],
+    must: ['Komponenty | Pevné disky a SSD'] },
+  // Grafické karty
+  { words: ['grafická karta','grafickou kartu','gpu','rtx','gtx','radeon rx','geforce','rx 7900','rx 6800'],
+    must: ['Komponenty | Grafické karty'] },
+  // Procesory — až po specifičtějších kategoriích
+  { words: ['procesor','cpu','ryzen','core i5','core i7','core i9','intel core','xeon'],
+    must: ['Komponenty | Procesory'] },
+  // RGB / LED osvětlení PC
+  { words: ['rgb páska','led páska do pc','rgb fan','argb','case osvětlení'],
+    must: ['Komponenty | Osvětlení - LED, RGB, D-RGB'] },
   { words: ['počítačová skříň','pc skříň','midi tower'],
     must: ['Komponenty | Skříně'] },
   { words: ['počítačový zdroj','pc zdroj','psu napájení'],
@@ -1146,19 +1167,32 @@ const DEVICE_TO_ACCESSORY = {
 
 // Vzory vztahových dotazů
 const RELATION_PATTERNS = [
-  // "toner pro HP LaserJet 1200" → hledej toner + HP LaserJet
-  { re: /^(.+?)\s+(?:pro|k|ke|do|na|kompatibiln[íi]\s+s?|pro\s+(?:tiskárnu|printer|zařízení))\s+(.+)$/i, fn: (m) => m[1] + ' ' + m[2] },
-  // "pouzdro na iPhone 16" → pouzdro + iPhone
-  { re: /^(.+?)\s+(?:na|pro|k)\s+(.+)$/i, fn: (m) => m[1] + ' ' + m[2] },
-  // "náhradní díl pro Lenovo IdeaPad" → náhradní díl + Lenovo
-  { re: /^náhradní\s+díl\s+(?:pro|k)\s+(.+)$/i, fn: (m) => 'náhradní díly ' + m[1] },
-  // "základní deska pro Ryzen 5 5600X" → základní deska + AM4
+  // === KOMPONENTY — specifické vzory PŘED obecnými ===
+  // "základní deska pro Ryzen/AMD" → základní deska AM4
   { re: /základní\s+desk[au]\s+(?:pro|s|socket)?\s*(?:ryzen|amd)/i, fn: () => 'základní deska AM4 socket' },
   { re: /základní\s+desk[au]\s+(?:pro|s|socket)?\s*(?:intel|core|i[3579])/i, fn: () => 'základní deska LGA intel' },
+  { re: /deska\s+(?:pro|s|socket)\s+(?:ryzen|amd)/i, fn: () => 'základní deska AM4 socket' },
+  // "chlazení pro Ryzen/Intel/CPU" → chlazení procesoru
+  { re: /chlazení\s+(?:pro|na|k)\s+(?:ryzen|amd|intel|cpu|procesor)/i, fn: () => 'chlazení procesoru chladič' },
+  { re: /chladič\s+(?:pro|na|k)\s+(?:ryzen|amd|intel|cpu)/i, fn: () => 'chlazení procesoru chladič' },
+  // "ram pro notebook/laptop" → sodimm notebook
+  { re: /ram\s+(?:pro|do|k)\s+(?:notebooku?|laptopu?)/i, fn: () => 'sodimm ram paměť notebook' },
+  { re: /paměť\s+(?:pro|do)\s+(?:notebooku?|laptopu?)/i, fn: () => 'sodimm ram paměť notebook' },
+  // "ssd pro PS5/konzoli" → ssd nvme m.2
+  { re: /ssd\s+(?:pro|do)\s+(?:ps5|playstation|xbox|konzoli?)/i, fn: () => 'ssd nvme m.2' },
+  // "zdroj pro RTX/grafiku" → pc zdroj
+  { re: /zdroj\s+(?:pro|k)\s+(?:rtx|gtx|grafik|rx\s*\d)/i, fn: () => 'pc zdroj psu napájení' },
+  // "skříň pro mini ITX/ATX" → pc skříň
+  { re: /skříň\s+(?:pro|na)?\s*(?:mini\s*itx|micro\s*atx|matx|atx)/i, fn: () => 'pc skříň midi tower' },
+  // === PŘÍSLUŠENSTVÍ & NÁHRADNÍ DÍLY ===
+  // "náhradní díl pro Lenovo IdeaPad" → náhradní díl + Lenovo
+  { re: /^náhradní\s+díl\s+(?:pro|k)\s+(.+)$/i, fn: (m) => 'náhradní díly ' + m[1] },
   // "baterie do notebooku Lenovo" → baterie notebook Lenovo
   { re: /bater(?:ie|ii)\s+(?:do|pro|k)\s+(?:notebooku?|laptopu?)\s*(.*)$/i, fn: (m) => 'baterie notebook ' + (m[1]||'') },
   // "adaptér pro notebook Dell" → adaptér notebook Dell
   { re: /adapt[eé]r\s+(?:pro|k|do)\s+(.+)$/i, fn: (m) => 'adaptér ' + m[1] },
+  // === OBECNÉ — až na konci ===
+  { re: /^(.+?)\s+(?:pro|k|ke|do|na|kompatibiln[íi]\s+s?)\s+(.+)$/i, fn: (m) => m[1] + ' ' + m[2] },
 ];
 
 // Preprocesor: transformuje dotaz pro lepší výsledky search
