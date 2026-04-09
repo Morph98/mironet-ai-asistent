@@ -1905,7 +1905,7 @@ app.post('/chat', requireAuth, async (req, res) => {
   const jeServisni = SERVISNI.test(userMessage) || SERVISNI.test(recent);
 
   // Detekce kontextových slov - dotazy navazující na předchozí konverzaci
-  const KONTEXTOVY = /lev[nň]|dra[žh]|nejlep|nejhor|nejdra|nejlev|jin[ýá]|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn|nejv[ýy]kon|premium|top model|flagship|bez omezen|cena nezále|nezále.*cen|co nejlep|co nejdra|herní verz|pracovní verz|s wifi|bez wifi|více m\.2|více slotů|chtěl bych|chci vidět|chci něco|chceš mi|ukaž mi|dej mi|co máš|co mate|co mám|jaké máš|jaké mate|máš něco|mate něco|doporuč mi|doporuč něco/i;
+  const KONTEXTOVY = /lev[nň]|dra[žh]|nejlep|nejhor|nejdra|nejlev|jin[ýá]|víc|dal[šs]í|ukáž|jinak|alternativ|podobn|co takhle|a co|ještě|stejn|nejv[ýy]kon|premium|top model|flagship|bez omezen|cena nezále|nezále.*cen|co nejlep|co nejdra|herní verz|pracovní verz|s wifi|bez wifi|více m\.2|více slotů|chtěl bych|chci vidět|chci něco|chceš mi|ukaž mi|dej mi|co máš|co mate|co mám|jaké máš|jaké mate|máš něco|mate něco|doporuč mi|doporuč něco|rozmezí|v ceně|cenov|rozpočet/i;
 
   // Výjimka: pokud dotaz obsahuje konkrétní značku nebo budget, není kontextový
   const KONKRETNI = /samsung|apple|xiaomi|iphone|huawei|motorola|lenovo|hp|dell|asus|acer|sony|lg|nokia|google|pixel|oneplus|honor|realme|\d+\s*(kc|kč|czk|tis)|\d+\s*[-–]\s*\d+/i;
