@@ -1298,10 +1298,34 @@ function search(query, max) {
   const scored = pool
     .map(p => ({ p, score: scoreProduct(p, expandedTokens, filteredTokens, phraseNorm) }))
     .filter(x => x.score > 0)
-    .sort((a, b) => b.score !== a.score ? b.score - a.score : a.p.cena - b.p.cena)
-    .slice(0, max);
+    .sort((a, b) => b.score !== a.score ? b.score - a.score : a.p.cena - b.p.cena);
 
-  return scored.map(({ p }) => ({
+  // Cenová diverzifikace — pokud jsou všechny výsledky se stejným score,
+  // rozlož je do cenových pásem aby Claude měl výběr z celého spektra
+  const topScore = scored.length > 0 ? scored[0].score : 0;
+  const sameScore = scored.filter(x => x.score === topScore);
+  let finalPool;
+  if (sameScore.length > 8) {
+    // Rozděl na 3 cenová pásma a vezmi z každého proporcionálně
+    const prices = sameScore.map(x => x.p.cena).filter(c => c > 0).sort((a,b) => a-b);
+    const p33 = prices[Math.floor(prices.length * 0.33)];
+    const p66 = prices[Math.floor(prices.length * 0.66)];
+    const low    = sameScore.filter(x => x.p.cena <= p33);
+    const mid    = sameScore.filter(x => x.p.cena > p33 && x.p.cena <= p66);
+    const high   = sameScore.filter(x => x.p.cena > p66);
+    // Vezmi ~10 z každého pásma, pak doplň ostatními
+    const pick = (arr, n) => arr.filter(x => x.p.dostupnost === '0').slice(0, n)
+      .concat(arr.filter(x => x.p.dostupnost !== '0').slice(0, Math.max(0, n - arr.filter(x => x.p.dostupnost === '0').length)));
+    finalPool = [...pick(low, 10), ...pick(mid, 10), ...pick(high, 10)];
+    // Doplň zbývající pokud je méně než max
+    const usedIds = new Set(finalPool.map(x => x.p.url));
+    const rest = scored.filter(x => !usedIds.has(x.p.url));
+    finalPool = [...finalPool, ...rest].slice(0, max);
+  } else {
+    finalPool = scored.slice(0, max);
+  }
+
+  return finalPool.map(({ p }) => ({
     nazev: p.nazev,
     cena: p.cena > 0 ? Math.round(p.cena).toLocaleString('cs-CZ') + ' Kc' : 'cena na dotaz',
     url: p.url,
